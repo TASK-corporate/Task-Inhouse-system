@@ -93,6 +93,30 @@
     .hidden{display:none}
     svg{width:24px;height:24px}
   </style>
+
+  <!-- Firebase Auth Check -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyDT6LEWn2MUHjRB_QoVApWi4k7M5kgkIEE",
+      authDomain: "task-system-login.firebaseapp.com",
+      projectId: "task-system-login",
+      storageBucket: "task-system-login.firebasestorage.app",
+      messagingSenderId: "148812118192",
+      appId: "1:148812118192:web:ecc481c04f034d89fda375"
+    };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+      } else {
+        document.body.style.visibility = 'visible';
+      }
+    });
+  </script>
+  <style>body{visibility:hidden;}</style>
 </head>
 <body>
 <div id="listView" class="container">
@@ -136,7 +160,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-var GAS_URL='https://script.google.com/macros/s/AKfycbzg25Repkf_RQgMdQJK_kpk-J_GZFwbUeZBdaKNewiNrbcsFU3ATdqQkWJtZChana3K/exec';
+var GAS_URL='https://script.google.com/macros/s/AKfycby7_ciZ-bUMTNB3JG6M7YOl2JIamfaiTnIkiWsxn0JYAYsKWWBKrJ4lxh4eE0kiIJts/exec';
 var API_KEY='task_employee_keiban.1000';
 var vehicles=[];
 var editMode=false;
@@ -365,3 +389,4 @@ fetchData();
 </script>
 </body>
 </html>
+
