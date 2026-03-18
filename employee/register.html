@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>車両登録 - 社用車管理システム</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif; background:#f3f4f6; color:#111; min-height:100vh; }
+    .header { background:#fff; padding:16px; border-bottom:1px solid #d1d5db; position:sticky; top:0; z-index:10; }
+    .header-inner { max-width:720px; margin:0 auto; display:flex; align-items:center; gap:12px; }
+    .back-link { display:flex; align-items:center; gap:5px; color:#6b7280; text-decoration:none; font-size:13px; }
+    .back-link:hover { color:#000; }
+    .back-link svg { width:15px; height:15px; }
+    .header-sep { color:#d1d5db; font-size:13px; }
+    .header h1 { font-size:18px; font-weight:700; }
+    .container { max-width:720px; margin:0 auto; padding:24px 16px 80px; }
+    .form-section { background:#fff; border:1px solid #e5e7eb; margin-bottom:16px; }
+    .form-section-title { font-size:11px; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:.06em; padding:14px 20px 10px; border-bottom:1px solid #e5e7eb; }
+    .form-section-body { padding:16px 20px 20px; }
+    .form-row { display:flex; gap:12px; margin-bottom:14px; }
+    .form-row:last-child { margin-bottom:0; }
+    @media(max-width:600px) { .form-row { flex-direction:column; } }
+    .fg { display:flex; flex-direction:column; gap:5px; flex:1; min-width:0; }
+    .fg label { font-size:12px; font-weight:600; color:#6b7280; }
+    .fg label .req { color:#ef4444; margin-left:2px; }
+    .fg input, .fg select { padding:10px 12px; border:1.5px solid #d1d5db; font-size:14px; color:#111; width:100%; background:#fff; -webkit-appearance:none; }
+    .fg input:focus, .fg select:focus { outline:none; border-color:#111; }
+    .fg select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; padding-right:30px; cursor:pointer; }
+    .fg .hint { font-size:11px; color:#9ca3af; margin-top:2px; }
+    .image-upload-area { border:2px dashed #d1d5db; padding:24px; text-align:center; cursor:pointer; transition:border-color .2s; }
+    .image-upload-area:hover { border-color:#111; background:#f9fafb; }
+    .image-upload-area.dragover { border-color:#111; background:#f0f0f0; }
+    .image-upload-text { font-size:14px; color:#6b7280; }
+    .image-upload-sub { font-size:12px; color:#9ca3af; margin-top:4px; }
+    .image-upload-input { display:none; }
+    .image-preview-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:8px; margin-top:12px; }
+    .image-preview-item { position:relative; aspect-ratio:1; overflow:hidden; border:1px solid #e5e7eb; }
+    .image-preview-item img { width:100%; height:100%; object-fit:cover; }
+    .image-preview-del { position:absolute; top:4px; right:4px; width:22px; height:22px; background:rgba(0,0,0,.7); color:#fff; border:none; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .submit-area { padding:20px; background:#fff; border:1px solid #e5e7eb; }
+    .submit-btn { width:100%; padding:14px; background:#111; color:#fff; border:none; font-size:15px; font-weight:700; cursor:pointer; }
+    .submit-btn:hover { background:#333; }
+    .submit-btn:disabled { background:#9ca3af; cursor:not-allowed; }
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:#1e293b; color:#fff; padding:12px 24px; font-size:14px; font-weight:600; z-index:999; transition:transform .3s ease; pointer-events:none; }
+    .toast.show { transform:translateX(-50%) translateY(0); }
+    .toast.error { background:#dc2626; }
+    .loading-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,.8); z-index:100; align-items:center; justify-content:center; flex-direction:column; gap:12px; }
+    .loading-overlay.active { display:flex; }
+    .spinner { width:32px; height:32px; border:3px solid #e5e7eb; border-top-color:#111; border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="header">
+  <div class="header-inner">
+    <a href="index.html" class="back-link">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      車両一覧
+    </a>
+    <span class="header-sep">/</span>
+    <h1>車両登録</h1>
+  </div>
+</div>
+<div class="container">
+  <!-- 識別情報 -->
+  <div class="form-section">
+    <div class="form-section-title">識別情報</div>
+    <div class="form-section-body">
+      <div class="form-row">
+        <div class="fg"><label>自動車ナンバー <span class="req">*</span></label><input type="text" id="fPlate" placeholder="例）大阪 300 あ 1234"></div>
+        <div class="fg"><label>車種 <span class="req">*</span></label><input type="text" id="fCarModel" placeholder="例）ハイエース"></div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>車台番号</label><input type="text" id="fChassis" placeholder="例）ZH30-0012345"></div>
+      </div>
+    </div>
+  </div>
+  <!-- 運用情報 -->
+  <div class="form-section">
+    <div class="form-section-title">運用情報</div>
+    <div class="form-section-body">
+      <div class="form-row">
+        <div class="fg"><label>状態 <span class="req">*</span></label>
+          <select id="fStatus"><option value="">選択</option><option value="貸出中">貸出中</option><option value="販売可">販売可</option><option value="修理中">修理中</option><option value="要修理">要修理</option><option value="代車">代車</option><option value="廃車">廃車</option><option value="その他">その他</option></select>
+        </div>
+        <div class="fg"><label>エリア <span class="req">*</span></label>
+          <select id="fArea"><option value="">選択</option><option value="大阪">大阪</option><option value="名古屋">名古屋</option><option value="東京">東京</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>管理場所</label>
+          <select id="fStorageLocation"><option value="">選択</option><option value="場所A">場所A</option><option value="場所B">場所B</option><option value="場所C">場所C</option></select>
+          <div class="hint">場所名は後日変更可能</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>貸出先</label><input type="text" id="fLoanDest" placeholder="会社名"></div>
+        <div class="fg"><label>使用者</label><input type="text" id="fUser" placeholder="ドライバー名"></div>
+      </div>
+    </div>
+  </div>
+  <!-- 契約情報 -->
+  <div class="form-section">
+    <div class="form-section-title">契約情報</div>
+    <div class="form-section-body">
+      <div class="form-row">
+        <div class="fg"><label>所有者 <span class="req">*</span></label>
+          <select id="fOwner"><option value="">選択</option><option value="TASK">TASK</option><option value="オリックス">オリックス</option><option value="その他">その他</option></select>
+        </div>
+        <div class="fg"><label>任意保険</label>
+          <select id="fInsurance"><option value="">選択</option><option value="無保険">無保険</option><option value="ソニー損保">ソニー損保</option><option value="東京海上日動">東京海上日動</option><option value="その他">その他</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>レンタル料金</label><input type="number" id="fPrice" placeholder="数字のみ（例：15000）"><div class="hint">数字のみ。表示は「〇円/月」</div></div>
+      </div>
+    </div>
+  </div>
+  <!-- 日付情報 -->
+  <div class="form-section">
+    <div class="form-section-title">日付情報</div>
+    <div class="form-section-body">
+      <div class="form-row">
+        <div class="fg"><label>車検満了日</label><input type="date" id="fInspection"></div>
+        <div class="fg"><label>オイル交換日</label><input type="date" id="fOil"></div>
+      </div>
+    </div>
+  </div>
+  <!-- 車両スペック -->
+  <div class="form-section">
+    <div class="form-section-title">車両スペック</div>
+    <div class="form-section-body">
+      <div class="form-row">
+        <div class="fg"><label>駆動方式</label>
+          <select id="fDriveType"><option value="">選択</option><option value="2WD">2WD</option><option value="4WD">4WD</option></select>
+        </div>
+        <div class="fg"><label>リモコンキー</label>
+          <select id="fRemoteKey"><option value="">選択</option><option value="あり">あり</option><option value="なし">なし</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>後部スモークガラス</label>
+          <select id="fSmokeGlass"><option value="">選択</option><option value="あり">あり</option><option value="なし">なし</option></select>
+        </div>
+        <div class="fg"><label>仕入時走行距離</label><input type="number" id="fMileageInitial" placeholder="km"><div class="hint">仕入時の走行距離（km）</div></div>
+      </div>
+    </div>
+  </div>
+  <!-- 備考 -->
+  <div class="form-section">
+    <div class="form-section-title">備考</div>
+    <div class="form-section-body">
+      <div class="form-row">
+        <div class="fg"><label>備考</label><input type="text" id="fNote" placeholder="任意のメモ"></div>
+      </div>
+    </div>
+  </div>
+  <!-- 画像 -->
+  <div class="form-section">
+    <div class="form-section-title">車両画像（最大20枚）</div>
+    <div class="form-section-body">
+      <div class="image-upload-area" id="dropZone">
+        <div class="image-upload-text">タップまたはドラッグで画像を追加</div>
+        <div class="image-upload-sub">JPG, PNG, GIF, WebP（各5MBまで）</div>
+        <input type="file" class="image-upload-input" id="imageInput" multiple accept="image/jpeg,image/png,image/gif,image/webp">
+      </div>
+      <div class="image-preview-grid" id="imagePreview"></div>
+    </div>
+  </div>
+  <div class="submit-area">
+    <button class="submit-btn" id="submitBtn" onclick="submitForm()">車両を登録する</button>
+  </div>
+</div>
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><div style="font-size:14px;color:#6b7280;">登録中...</div></div>
+<div class="toast" id="toast"></div>
+<script>
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbyRm87xVJS-b0D9P2TYzmZYXln8Xq2uorAy_AEpxI6J_PPz-vCbt6as8w1bjcX1PsUM/exec';
+var API_KEY = 'task_employee_keiban.1000';
+var imageFiles = [];
+
+var dropZone = document.getElementById('dropZone');
+var imageInput = document.getElementById('imageInput');
+dropZone.addEventListener('click', function() { imageInput.click(); });
+dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('dragover'); });
+dropZone.addEventListener('drop', function(e) { e.preventDefault(); dropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+imageInput.addEventListener('change', function() { handleFiles(this.files); this.value=''; });
+
+function handleFiles(files) {
+  var rem = 20 - imageFiles.length;
+  if (rem <= 0) { showToast('画像は最大20枚までです',true); return; }
+  Array.from(files).slice(0,rem).forEach(function(file) {
+    if (file.size > 5*1024*1024) { showToast(file.name+' は5MBを超えています',true); return; }
+    var r = new FileReader();
+    r.onload = function(e) { imageFiles.push({base64:e.target.result,name:file.name}); renderPreviews(); };
+    r.readAsDataURL(file);
+  });
+}
+function renderPreviews() {
+  document.getElementById('imagePreview').innerHTML = imageFiles.map(function(img,i) {
+    return '<div class="image-preview-item"><img src="'+img.base64+'" alt="'+img.name+'"><button class="image-preview-del" onclick="imageFiles.splice('+i+',1);renderPreviews()">×</button></div>';
+  }).join('');
+}
+
+function submitForm() {
+  var plate=document.getElementById('fPlate').value.trim();
+  var carModel=document.getElementById('fCarModel').value.trim();
+  var owner=document.getElementById('fOwner').value;
+  var status=document.getElementById('fStatus').value;
+  var area=document.getElementById('fArea').value;
+  if (!plate) { showToast('自動車ナンバーを入力してください',true); return; }
+  if (!carModel) { showToast('車種を入力してください',true); return; }
+  if (!owner) { showToast('所有者を選択してください',true); return; }
+  if (!status) { showToast('状態を選択してください',true); return; }
+  if (!area) { showToast('エリアを選択してください',true); return; }
+
+  var body = {
+    action:'registerVehicle', key:API_KEY,
+    plate:plate, carModel:carModel,
+    chassis: document.getElementById('fChassis').value.trim(),
+    status:status, area:area,
+    storageLocation: document.getElementById('fStorageLocation').value,
+    loanDest: document.getElementById('fLoanDest').value.trim(),
+    user: document.getElementById('fUser').value.trim(),
+    owner:owner,
+    insurance: document.getElementById('fInsurance').value,
+    price: document.getElementById('fPrice').value.trim(),
+    inspection: document.getElementById('fInspection').value,
+    oil: document.getElementById('fOil').value,
+    driveType: document.getElementById('fDriveType').value,
+    remoteKey: document.getElementById('fRemoteKey').value,
+    smokeGlass: document.getElementById('fSmokeGlass').value,
+    mileageInitial: document.getElementById('fMileageInitial').value.trim(),
+    note: document.getElementById('fNote').value.trim(),
+    images: imageFiles.map(function(img) { return {name:img.name,base64:img.base64}; })
+  };
+
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('loadingOverlay').classList.add('active');
+
+  fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(body) })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      document.getElementById('loadingOverlay').classList.remove('active');
+      document.getElementById('submitBtn').disabled = false;
+      if (data.error) showToast(data.error,true);
+      else { showToast('登録完了：'+plate); setTimeout(function(){window.location.href='index.html';},1500); }
+    })
+    .catch(function(err) {
+      document.getElementById('loadingOverlay').classList.remove('active');
+      document.getElementById('submitBtn').disabled = false;
+      showToast('通信エラー：'+err.message,true);
+    });
+}
+
+function showToast(msg,isError) {
+  var t=document.getElementById('toast'); t.textContent=msg;
+  t.className='toast'+(isError?' error':''); t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},3000);
+}
+</script>
+</body>
+</html>
