@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>請求書作成 - 株式会社TASK</title>
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    :root {
+      --black:#111; --white:#fff; --g1:#f3f4f6; --g2:#e5e7eb; --g3:#d1d5db;
+      --g4:#9ca3af; --g5:#6b7280; --accent:#f59e0b; --red:#ef4444; --red-bg:#fee2e2;
+    }
+    html, body { height:100%; overflow:hidden; }
+    body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif; background:var(--g1); color:var(--black); font-size:15px; line-height:1.5; -webkit-text-size-adjust:100%; }
+
+    /* TOPBAR */
+    .topbar { position:fixed; top:0; left:0; right:0; height:52px; background:var(--black); color:var(--white); display:flex; align-items:center; justify-content:space-between; padding:0 16px; z-index:400; gap:12px; }
+    .topbar-left { display:flex; align-items:center; gap:10px; min-width:0; }
+    .topbar-home { display:flex; align-items:center; gap:5px; color:var(--g4); text-decoration:none; font-size:13px; flex-shrink:0; padding:6px 0; transition:color .2s; }
+    .topbar-home:hover { color:var(--white); }
+    .topbar-home svg { width:15px; height:15px; }
+    .topbar-sep { color:var(--g5); font-size:13px; flex-shrink:0; }
+    .topbar h1 { font-size:15px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .topbar-actions { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+    .topbar-btn { padding:7px 14px; border:none; font-size:13px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px; border-radius:4px; white-space:nowrap; }
+    .topbar-btn svg { width:14px; height:14px; }
+    .btn-save  { background:var(--white); color:var(--black); }
+    .btn-save:hover  { background:var(--g2); }
+    .btn-print { background:#1d4ed8; color:var(--white); }
+    .btn-print:hover { background:#1e40af; }
+    @media(max-width:480px) { .topbar-btn .btn-label { display:none; } .topbar-btn { padding:7px 10px; } }
+
+    /* TABS (mobile) */
+    .tabs { position:fixed; top:52px; left:0; right:0; display:flex; background:var(--white); border-bottom:2px solid var(--g2); z-index:300; }
+    .tab-btn { flex:1; padding:11px 8px; border:none; background:none; font-size:13px; font-weight:600; color:var(--g5); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; border-bottom:3px solid transparent; margin-bottom:-2px; transition:color .15s,border-color .15s; }
+    .tab-btn svg { width:15px; height:15px; }
+    .tab-btn.active { color:var(--black); border-bottom-color:var(--black); }
+    @media(min-width:768px) { .tabs { display:none; } }
+
+    /* LAYOUT */
+    .main { position:fixed; top:52px; left:0; right:0; bottom:0; display:flex; }
+    @media(max-width:767px) { .main { top:96px; } }
+
+    /* LEFT PANEL */
+    .panel-input { width:440px; flex-shrink:0; display:flex; flex-direction:column; background:var(--white); border-right:1px solid var(--g2); overflow:hidden; }
+    @media(max-width:767px) { .panel-input { width:100%; } }
+    .form-scroll { flex:1; overflow-y:auto; padding:16px; -webkit-overflow-scrolling:touch; }
+    .form-sec { margin-bottom:20px; }
+    .form-sec-title { font-size:11px; font-weight:700; color:#374151; border-bottom:2px solid var(--black); padding-bottom:3px; margin-bottom:10px; text-transform:uppercase; letter-spacing:.05em; display:flex; align-items:center; gap:8px; }
+    .form-row { display:flex; gap:8px; margin-bottom:8px; }
+    .fg { display:flex; flex-direction:column; gap:4px; flex:1; min-width:0; }
+    .fg label { font-size:11px; font-weight:700; color:var(--g5); letter-spacing:.03em; }
+    .fg input, .fg select { padding:10px 12px; border:1.5px solid var(--g3); font-size:14px; color:var(--black); width:100%; border-radius:6px; -webkit-appearance:none; background:var(--white); }
+    .fg input:focus, .fg select:focus { outline:none; border-color:var(--black); }
+
+    /* 取引先・年月セレクタ */
+    .client-bar { background:#f9fafb; border-bottom:1px solid var(--g2); padding:12px 16px; flex-shrink:0; }
+    .client-row { display:flex; gap:8px; margin-bottom:8px; }
+    .client-row:last-child { margin-bottom:0; }
+    .copy-btn { padding:8px 14px; border:1.5px solid var(--g3); background:none; font-size:13px; font-weight:600; color:var(--g5); cursor:pointer; border-radius:6px; white-space:nowrap; }
+    .copy-btn:hover { border-color:var(--black); color:var(--black); }
+
+    /* 履歴パネル */
+    .history-bar { background:#f9fafb; border-bottom:1px solid var(--g2); padding:10px 16px; flex-shrink:0; max-height:140px; overflow-y:auto; }
+    .history-title { font-size:11px; font-weight:700; color:var(--g5); text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px; }
+    .history-list { display:flex; flex-direction:column; gap:4px; }
+    .history-item { display:flex; align-items:center; gap:8px; padding:7px 10px; background:var(--white); border:1px solid var(--g2); border-radius:4px; font-size:13px; cursor:pointer; transition:border-color .2s; }
+    .history-item:hover { border-color:var(--black); }
+    .history-name { font-weight:600; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .history-amount { font-size:12px; color:var(--g5); }
+    .history-empty { font-size:12px; color:var(--g4); }
+
+    /* SUGGEST */
+    .suggest-wrap { position:relative; }
+    .suggest-dropdown { position:absolute; top:100%; left:0; right:0; background:var(--white); border:1.5px solid var(--black); border-top:none; border-radius:0 0 6px 6px; max-height:200px; overflow-y:auto; z-index:500; display:none; box-shadow:0 4px 12px rgba(0,0,0,.1); }
+    .suggest-dropdown.open { display:block; }
+    .suggest-item { padding:10px 12px; cursor:pointer; font-size:14px; border-bottom:1px solid var(--g2); }
+    .suggest-item:last-child { border-bottom:none; }
+    .suggest-item:hover { background:var(--g1); }
+    .suggest-plate { font-weight:700; }
+    .suggest-sub { font-size:11px; color:var(--g5); }
+
+    /* LINE ITEMS */
+    .li-header { display:grid; grid-template-columns:60px 1fr 50px 80px 1fr 34px; gap:4px; margin-bottom:4px; padding:0 2px; }
+    .li-header span { font-size:10px; font-weight:700; color:var(--g4); text-transform:uppercase; letter-spacing:.04em; }
+    .li-area { margin-bottom:8px; }
+    .li-row { display:grid; grid-template-columns:60px 1fr 50px 80px 1fr 34px; gap:4px; align-items:start; margin-bottom:6px; background:#f9fafb; border:1px solid var(--g2); border-radius:6px; padding:8px; }
+    .li-row input, .li-row select { padding:8px 6px; border:1.5px solid var(--g3); font-size:13px; width:100%; border-radius:4px; -webkit-appearance:none; background:var(--white); }
+    .li-row input:focus, .li-row select:focus { outline:none; border-color:var(--black); }
+    .li-row input.tr { text-align:right; }
+    .li-content-wrap { display:flex; flex-direction:column; gap:3px; min-width:0; }
+    .li-del { display:flex; align-items:center; justify-content:center; width:34px; height:34px; background:none; border:1.5px solid var(--red-bg); color:var(--red); cursor:pointer; font-size:16px; border-radius:4px; flex-shrink:0; }
+    .li-del:hover { background:var(--red-bg); }
+    .add-li-btn { width:100%; padding:11px; border:1.5px dashed var(--g3); background:none; color:var(--g5); font-size:14px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; border-radius:6px; }
+    .add-li-btn:hover { border-color:var(--black); color:var(--black); }
+
+    /* RIGHT PANEL */
+    .panel-preview { flex:1; display:flex; flex-direction:column; background:#cbd5e1; overflow:hidden; }
+    @media(max-width:767px) { .panel-preview { width:100%; } }
+    .preview-inner { flex:1; overflow-y:auto; padding:24px 20px 40px; display:flex; flex-direction:column; align-items:center; }
+    .preview-hint { font-size:11px; color:#475569; display:flex; align-items:center; gap:4px; margin-bottom:14px; align-self:flex-start; }
+
+    /* INVOICE SCALE */
+    .inv-scale-wrap { width:100%; max-width:794px; overflow:visible; }
+    .inv-scale-inner { transform-origin:top left; width:794px; }
+
+    /* INVOICE PAPER */
+    .inv-paper { width:794px; min-height:auto; background:var(--white); padding:32px 48px; box-shadow:0 4px 24px rgba(0,0,0,.18); position:relative; font-size:13px; }
+    .inv-paper [contenteditable="true"] { border-radius:2px; display:inline-block; min-width:16px; }
+    .inv-paper [contenteditable="true"]:hover { background:#fef3c7; outline:1px dashed var(--accent); }
+    .inv-paper [contenteditable="true"]:focus  { background:#fffbeb; outline:2px solid var(--accent); }
+    .inv-title { font-size:24px; font-weight:700; text-align:center; text-decoration:underline; margin-bottom:6px; display:block; width:100%; }
+    .inv-dateline { text-align:center; font-size:13px; margin-bottom:16px; }
+    .inv-toprow { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; gap:16px; }
+    .inv-partner-name { font-size:18px; font-weight:700; }
+    .inv-partner-suffix { font-size:13px; font-weight:400; margin-left:4px; }
+    .inv-issuer { text-align:right; font-size:11px; line-height:1.7; flex-shrink:0; }
+    .inv-stamp-img { width:56px; height:56px; object-fit:contain; display:block; margin:0 0 4px auto; }
+    .inv-amount-row { border-top:1.5px solid var(--black); border-bottom:1.5px solid var(--black); padding:7px 0; margin-bottom:10px; display:flex; align-items:baseline; gap:16px; }
+    .inv-amount-label { font-size:13px; font-weight:700; }
+    .inv-amount-val { font-size:18px; font-weight:700; }
+    .inv-period { font-size:11px; margin-bottom:10px; color:#374151; }
+    .inv-table { width:100%; border-collapse:collapse; margin-bottom:8px; font-size:11.5px; }
+    .inv-table th { background:var(--black); color:var(--white); padding:5px 6px; text-align:left; font-weight:600; font-size:11px; }
+    .inv-table th.tr, .inv-table td.tr { text-align:right; }
+    .inv-table td { padding:5px 6px; border-bottom:1px solid var(--g2); vertical-align:top; }
+    .inv-table tr:nth-child(even) td { background:#f9fafb; }
+    .inv-tax-row td { font-size:11px; color:var(--g5); border-bottom:1px solid var(--g2); }
+    .inv-total-row td { border-top:2px solid var(--black) !important; font-weight:700; font-size:12px; }
+    .inv-note { font-size:11px; color:var(--g5); margin-bottom:12px; }
+    .inv-bank { padding:8px; border:1px solid var(--g3); font-size:11px; line-height:1.8; text-align:center; margin-bottom:30px; }
+    .inv-bank-title { font-weight:700; font-size:12px; margin-bottom:2px; }
+    .inv-footer-co { position:absolute; bottom:24px; left:48px; font-size:11px; font-weight:700; }
+
+    .form-footer { padding:12px 16px; border-top:1px solid var(--g2); background:var(--white); flex-shrink:0; }
+    .btn-reset { width:100%; padding:11px; background:var(--white); color:var(--g5); border:1.5px solid var(--g3); font-size:14px; font-weight:600; cursor:pointer; border-radius:6px; }
+    .btn-reset:hover { border-color:var(--black); color:var(--black); }
+
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:#1e293b; color:var(--white); padding:12px 24px; border-radius:8px; font-size:14px; font-weight:600; z-index:999; transition:transform .3s ease; white-space:nowrap; pointer-events:none; }
+    .toast.show { transform:translateX(-50%) translateY(0); }
+    .toast.error { background:#dc2626; }
+    .data-status { font-size:12px; color:var(--g5); display:flex; align-items:center; gap:5px; }
+    .spinner { width:12px; height:12px; border:2px solid var(--g3); border-top-color:var(--black); border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    @media print {
+      .topbar, .tabs, .panel-input, .preview-hint, .toast { display:none !important; }
+      html, body { height:auto; overflow:visible; }
+      .main { position:static; display:block; }
+      .panel-preview { display:block !important; background:none; overflow:visible; }
+      .preview-inner { padding:0; overflow:visible; display:block; }
+      .inv-scale-wrap, .inv-scale-inner { width:100% !important; transform:none !important; height:auto !important; }
+      .inv-paper { width:100%; min-height:0; box-shadow:none; padding:8mm 14mm; }
+      .inv-paper + .inv-paper { margin-top:0; }
+      .inv-paper [contenteditable]:hover, .inv-paper [contenteditable]:focus { background:none !important; outline:none !important; }
+      /* ページ分割対応 */
+      .inv-table { page-break-inside:auto; }
+      .inv-table tr { page-break-inside:avoid; }
+      .inv-page-break { page-break-before:always; }
+      /* 縮小モード */
+      .inv-paper.compact-mode .inv-table { font-size:10px; }
+      .inv-paper.compact-mode .inv-table th, .inv-paper.compact-mode .inv-table td { padding:5px 6px; }
+      .inv-paper.compact-mode .inv-title { font-size:22px; margin-bottom:8px; }
+      .inv-paper.compact-mode .inv-dateline { margin-bottom:18px; }
+      .inv-paper.compact-mode .inv-toprow { margin-bottom:14px; }
+      .inv-paper.compact-mode .inv-partner-name { font-size:17px; }
+      .inv-paper.compact-mode .inv-amount-row { padding:7px 0; margin-bottom:10px; }
+      .inv-paper.compact-mode .inv-amount-val { font-size:17px; }
+      .inv-paper.compact-mode .inv-period { margin-bottom:10px; }
+      .inv-paper.compact-mode .inv-note { margin-bottom:12px; }
+      .inv-paper.compact-mode .inv-bank { padding:8px; margin-bottom:30px; }
+      @page { margin:0; size:A4 portrait; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="topbar">
+  <div class="topbar-left">
+    <a href="index.html" class="topbar-home">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      車両一覧
+    </a>
+    <span class="topbar-sep">/</span>
+    <h1>請求書作成</h1>
+  </div>
+  <div class="topbar-actions">
+    <button class="topbar-btn btn-save" onclick="saveToSheet()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+      <span class="btn-label">スプシに保存</span>
+    </button>
+    <button class="topbar-btn btn-print" onclick="printPDF()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+      <span class="btn-label">PDF保存</span>
+    </button>
+  </div>
+</nav>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="input" onclick="switchTab('input')">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+    入力
+  </button>
+  <button class="tab-btn" data-tab="preview" onclick="switchTab('preview')">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+    プレビュー
+  </button>
+</div>
+
+<div class="main">
+  <div class="panel-input" id="panelInput">
+
+    <!-- 取引先・年月選択 -->
+    <div class="client-bar">
+      <div class="client-row">
+        <div class="fg">
+          <label>取引先</label>
+          <select id="selClient" onchange="onClientChange()">
+            <option value="">取引先を選択...</option>
+          </select>
+        </div>
+        <div class="fg" style="max-width:130px;">
+          <label>年月</label>
+          <input type="month" id="selMonth" onchange="onMonthChange()">
+        </div>
+      </div>
+      <div class="client-row">
+        <button class="copy-btn" onclick="copyLastMonth()">先月をコピー</button>
+        <span id="clientLoadStatus" class="data-status"></span>
+      </div>
+    </div>
+
+    <!-- 履歴パネル -->
+    <div class="history-bar">
+      <div class="history-title">保存済み請求書</div>
+      <div class="history-list" id="historyList"><div class="history-empty">取引先を選択してください</div></div>
+    </div>
+
+    <div class="form-scroll">
+      <div class="form-sec">
+        <div class="form-sec-title">基本情報</div>
+        <div class="form-row">
+          <div class="fg"><label>請求日</label><input type="date" id="invDate"></div>
+          <div class="fg"><label>支払実行日</label><input type="date" id="invPayDate"></div>
+        </div>
+        <div class="form-row">
+          <div class="fg"><label>集計期間 開始</label><input type="date" id="invStart"></div>
+          <div class="fg"><label>集計期間 終了</label><input type="date" id="invEnd"></div>
+        </div>
+      </div>
+
+      <div class="form-sec">
+        <div class="form-sec-title">
+          明細
+          <span id="vehicleLoadStatus" class="data-status"></span>
+        </div>
+        <div class="li-header">
+          <span>月日</span><span>内容</span><span>数量</span><span>単価</span><span>備考</span><span></span>
+        </div>
+        <div class="li-area" id="liArea"></div>
+        <button class="add-li-btn" id="addBtn">＋ 行を追加</button>
+      </div>
+
+      <div class="form-sec">
+        <div class="form-sec-title">備考（請求書全体）</div>
+        <div class="fg"><input type="text" id="invNote" placeholder="任意入力"></div>
+      </div>
+    </div>
+
+    <div class="form-footer">
+      <button class="btn-reset" onclick="clearForm()">＋ 新規作成（リセット）</button>
+    </div>
+  </div>
+
+  <div class="panel-preview" id="panelPreview">
+    <div class="preview-inner">
+      <div class="preview-hint">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        黄色い箇所はタップで直接編集できます
+      </div>
+      <div class="inv-scale-wrap" id="invScaleWrap">
+        <div class="inv-scale-inner" id="invScaleInner">
+          <div id="invPagesContainer">
+            <div class="inv-paper" id="invPaper">
+              <div class="inv-title" contenteditable="true">請求書</div>
+              <div class="inv-dateline">請求日&nbsp;&nbsp;<span id="pvDate" contenteditable="true">―</span></div>
+              <div class="inv-toprow">
+                <div><div class="inv-partner-name"><span id="pvPartner" contenteditable="true">（取引先名）</span><span class="inv-partner-suffix">御中</span></div></div>
+                <div class="inv-issuer">
+                  <img class="inv-stamp-img" src="data:image/jpeg;base64,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" alt="印">
+                  〒571-0076<br>大阪府門真市大池町34-5<br>☎05012905476<br>登録番号T5120001226577
+                </div>
+              </div>
+              <div class="inv-amount-row"><span class="inv-amount-label">請求金額</span><span class="inv-amount-val">¥&nbsp;<span id="pvTotal">0</span></span></div>
+              <div class="inv-period">集計期間：<span id="pvStart" contenteditable="true">―</span> ～ <span id="pvEnd" contenteditable="true">―</span>&nbsp;&nbsp;支払実行日：<span id="pvPayDate" contenteditable="true">―</span></div>
+              <!-- 明細・合計・備考・振込先はJS側で動的生成 -->
+              <div id="pvTableArea"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// 設定
+// ============================================================
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbyRm87xVJS-b0D9P2TYzmZYXln8Xq2uorAy_AEpxI6J_PPz-vCbt6as8w1bjcX1PsUM/exec';
+var API_KEY = 'task_employee_keiban.1000';
+
+var clients       = [];      // 取引先マスター
+var vehicleCache  = [];      // 車両データ
+var vehicleLoaded = false;
+var lineItems     = [];
+var liId          = 0;
+
+var PRESETS = [
+  { v:'車両代', l:'車両代', p:0 },
+  { v:'名変',   l:'名変',   p:4000 },
+  { v:'立替',   l:'立替',   p:0 },
+  { v:'修理代', l:'修理代', p:0 },
+  { v:'custom', l:'自由記述', p:0 }
+];
+
+// ============================================================
+// 初期化
+// ============================================================
+function init() {
+  document.getElementById('addBtn').addEventListener('click', function() { addLineItem(); });
+  ['invDate','invPayDate','invStart','invEnd','invNote'].forEach(function(id) {
+    document.getElementById(id).addEventListener('input', updatePreview);
+  });
+
+  var d = new Date();
+  document.getElementById('invDate').value = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+  document.getElementById('selMonth').value = d.getFullYear() + '-' + pad(d.getMonth()+1);
+
+  addLineItem();
+  rescale();
+  updatePreview();
+  loadClients();
+  loadVehicles();
+}
+
+// ============================================================
+// 取引先マスター取得
+// ============================================================
+function loadClients() {
+  var el = document.getElementById('clientLoadStatus');
+  el.innerHTML = '<div class="spinner"></div>&nbsp;取引先読込中…';
+  fetch(GAS_URL + '?action=clients&key=' + API_KEY)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (Array.isArray(data)) {
+        clients = data;
+        var sel = document.getElementById('selClient');
+        sel.innerHTML = '<option value="">取引先を選択...</option>';
+        data.forEach(function(c) {
+          sel.innerHTML += '<option value="' + c.clientId + '">' + c.companyName + '</option>';
+        });
+        el.innerHTML = '✓ ' + data.length + '社';
+        el.style.color = '#059669';
+        setTimeout(function() { el.innerHTML = ''; }, 3000);
+      } else { throw new Error(); }
+    })
+    .catch(function() {
+      el.innerHTML = '⚠ 取得失敗';
+      el.style.color = '#d97706';
+    });
+}
+
+// ============================================================
+// 車両データ取得
+// ============================================================
+function loadVehicles() {
+  var el = document.getElementById('vehicleLoadStatus');
+  el.innerHTML = '<div class="spinner"></div>&nbsp;車両読込中…';
+  fetch(GAS_URL + '?role=employee&key=' + API_KEY)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (Array.isArray(data)) {
+        vehicleCache = data;
+        vehicleLoaded = true;
+        el.innerHTML = '✓ ' + data.length + '台';
+        el.style.color = '#059669';
+        setTimeout(function() { el.innerHTML = ''; }, 3000);
+      } else { throw new Error(); }
+    })
+    .catch(function() {
+      el.innerHTML = '⚠ 取得失敗（手動入力可）';
+      el.style.color = '#d97706';
+    });
+}
+
+// ============================================================
+// 取引先選択→履歴ロード
+// ============================================================
+function onClientChange() {
+  var clientId = document.getElementById('selClient').value;
+  if (!clientId) {
+    document.getElementById('historyList').innerHTML = '<div class="history-empty">取引先を選択してください</div>';
+    return;
+  }
+  var client = clients.find(function(c) { return c.clientId === clientId; });
+  if (client) {
+    // プレビューに取引先名を反映
+    setTxt('pvPartner', client.companyName);
+  }
+  loadHistory(clientId);
+}
+
+function onMonthChange() { /* 年月変更時の追加処理があれば */ }
+
+function loadHistory(clientId) {
+  var el = document.getElementById('historyList');
+  el.innerHTML = '<div class="history-empty">読込中...</div>';
+  fetch(GAS_URL + '?action=invoices&clientId=' + clientId + '&key=' + API_KEY)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!Array.isArray(data) || data.length === 0) {
+        el.innerHTML = '<div class="history-empty">保存済み請求書はありません</div>';
+        return;
+      }
+      el.innerHTML = data.map(function(inv) {
+        return '<div class="history-item" onclick="loadInvoice(\'' + inv.invoiceId + '\')">'
+          + '<span class="history-name">' + inv.yearMonth + '</span>'
+          + '<span class="history-amount">¥' + fmtM(inv.total || 0) + '</span>'
+          + '</div>';
+      }).join('');
+    })
+    .catch(function() {
+      el.innerHTML = '<div class="history-empty">履歴の取得に失敗しました</div>';
+    });
+}
+
+// ============================================================
+// 請求書ロード（スプシから）
+// ============================================================
+function loadInvoice(invoiceId) {
+  fetch(GAS_URL + '?action=invoice&id=' + invoiceId + '&key=' + API_KEY)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data || data.error) { showToast(data.error || '取得失敗', true); return; }
+      // フォームにセット
+      if (data.meta) {
+        document.getElementById('invDate').value    = data.meta.invDate    || '';
+        document.getElementById('invPayDate').value = data.meta.invPayDate || '';
+        document.getElementById('invStart').value   = data.meta.invStart   || '';
+        document.getElementById('invEnd').value     = data.meta.invEnd     || '';
+        document.getElementById('invNote').value    = data.meta.invNote    || '';
+      }
+      // 明細リセット＆ロード
+      lineItems = [];
+      document.getElementById('liArea').innerHTML = '';
+      liId = 0;
+      if (data.lines && data.lines.length) {
+        data.lines.forEach(function(line) {
+          addLineItem(line.date, line.itemType, line.itemText, line.qty, line.price, line.memo);
+        });
+      } else { addLineItem(); }
+      updatePreview();
+      showToast('読み込みました');
+      if (window.innerWidth < 768) switchTab('preview');
+    })
+    .catch(function(err) { showToast('通信エラー: ' + err.message, true); });
+}
+
+// ============================================================
+// 先月コピー
+// ============================================================
+function copyLastMonth() {
+  var clientId = document.getElementById('selClient').value;
+  var month    = document.getElementById('selMonth').value;
+  if (!clientId) { showToast('取引先を選択してください', true); return; }
+  if (!month)    { showToast('年月を選択してください', true); return; }
+
+  // 前月を計算
+  var parts = month.split('-');
+  var y = parseInt(parts[0]), m = parseInt(parts[1]) - 1;
+  if (m === 0) { y--; m = 12; }
+  var prevId = clientId + '-' + y + pad(m);
+
+  loadInvoice(prevId);
+}
+
+// ============================================================
+// スプシに保存
+// ============================================================
+function saveToSheet() {
+  var clientId = document.getElementById('selClient').value;
+  var month    = document.getElementById('selMonth').value;
+  if (!clientId) { showToast('取引先を選択してください', true); return; }
+  if (!month)    { showToast('年月を選択してください', true); return; }
+
+  var yearMonth = month.replace('-', '');
+  var invoiceId = clientId + '-' + yearMonth;
+
+  var body = {
+    action:    'saveInvoice',
+    key:       API_KEY,
+    invoiceId: invoiceId,
+    clientId:  clientId,
+    yearMonth: yearMonth,
+    meta: {
+      invDate:    gv('invDate'),
+      invPayDate: gv('invPayDate'),
+      invStart:   gv('invStart'),
+      invEnd:     gv('invEnd'),
+      invNote:    gv('invNote'),
+    },
+    lines: lineItems.map(function(item, idx) {
+      var label = (item.ct === 'custom') ? (item.ctText || '') : item.ct;
+      return {
+        lineNo:   idx + 1,
+        date:     item.date  || '',
+        itemType: item.ct,
+        itemText: label,
+        qty:      item.qty   || 1,
+        price:    item.price || 0,
+        memo:     item.memo  || ''
+      };
+    })
+  };
+
+  var saveBtn = document.querySelector('.btn-save');
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<div style="width:14px;height:14px;border:2px solid #d1d5db;border-top-color:#111;border-radius:50%;animation:spin .7s linear infinite"></div><span class="btn-label">保存中...</span>';
+
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(body)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg><span class="btn-label">スプシに保存</span>';
+    if (data.error) { showToast(data.error, true); }
+    else {
+      showToast('スプシに保存しました ✓');
+      loadHistory(clientId);
+    }
+  })
+  .catch(function(err) {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg><span class="btn-label">スプシに保存</span>';
+    showToast('通信エラー: ' + err.message, true);
+  });
+}
+
+// ============================================================
+// 明細行
+// ============================================================
+function addLineItem(dateVal, ctType, ctText, qty, price, memo) {
+  liId++;
+  var id = liId;
+  var ct = ctType || 'custom';
+  var dfp = (ct === '名変') ? 4000 : (price != null ? price : 0);
+
+  lineItems.push({ id:id, date:dateVal||'', ct:ct, ctText:ctText||'', qty:qty||1, price:dfp, memo:memo||'' });
+
+  var opts = PRESETS.map(function(p) {
+    return '<option value="' + p.v + '"' + (ct === p.v ? ' selected' : '') + '>' + p.l + '</option>';
+  }).join('');
+
+  var row = document.createElement('div');
+  row.className = 'li-row';
+  row.id = 'li_' + id;
+  var sugId = 'sug_' + id;
+
+  row.innerHTML =
+    '<input type="text" placeholder="4/1" id="liDate_' + id + '" value="' + eA(dateVal||'') + '" style="font-size:12px;">' +
+    '<div class="li-content-wrap">' +
+      '<select id="liType_' + id + '">' + opts + '</select>' +
+      '<div class="suggest-wrap" id="liSugWrap_' + id + '" style="' + (ct==='custom' ? '' : 'display:none;') + '">' +
+        '<input type="text" placeholder="内容 or 車両検索…" id="liDesc_' + id + '" value="' + eA(ct==='custom'?(ctText||''):'') + '" autocomplete="off">' +
+        '<div class="suggest-dropdown" id="' + sugId + '"></div>' +
+      '</div>' +
+    '</div>' +
+    '<input type="number" class="tr" min="1" id="liQty_' + id + '" value="' + (qty||1) + '">' +
+    '<input type="number" class="tr" placeholder="0" id="liPrice_' + id + '" value="' + (dfp||'') + '">' +
+    '<input type="text" placeholder="備考" id="liMemo_' + id + '" value="' + eA(memo||'') + '" style="font-size:12px;">' +
+    '<button class="li-del">×</button>';
+
+  document.getElementById('liArea').appendChild(row);
+
+  document.getElementById('liDate_'+id).addEventListener('input', function() { upLI(id,'date',this.value); });
+  document.getElementById('liType_'+id).addEventListener('change', function() { onTypeChange(id,this.value); });
+  document.getElementById('liDesc_'+id).addEventListener('input', function() { onDescInput(id,this); });
+  document.getElementById('liQty_'+id).addEventListener('input', function() { upLI(id,'qty',this.value); });
+  document.getElementById('liPrice_'+id).addEventListener('input', function() { upLI(id,'price',this.value); });
+  document.getElementById('liMemo_'+id).addEventListener('input', function() { upLI(id,'memo',this.value); });
+  row.querySelector('.li-del').addEventListener('click', function() { delLI(id); });
+
+  document.addEventListener('click', function(e) {
+    var dd = document.getElementById(sugId);
+    if (dd && !row.contains(e.target)) dd.classList.remove('open');
+  });
+
+  updatePreview();
+}
+
+function onTypeChange(id, val) {
+  var item = lineItems.find(function(i) { return i.id === id; });
+  if (!item) return;
+  item.ct = val;
+  var wrap = document.getElementById('liSugWrap_'+id);
+  var priceEl = document.getElementById('liPrice_'+id);
+  if (val === 'custom') {
+    wrap.style.display = '';
+    item.ctText = (document.getElementById('liDesc_'+id)||{}).value||'';
+  } else {
+    wrap.style.display = 'none';
+    item.ctText = val;
+    if (val === '名変' && !item.price) { item.price = 4000; if (priceEl) priceEl.value = 4000; }
+  }
+  updatePreview();
+}
+
+function onDescInput(id, input) {
+  upLI(id, 'ctText', input.value);
+  var q = input.value.trim().toLowerCase();
+  var dd = document.getElementById('sug_'+id);
+  if (!q || !vehicleLoaded) { dd.classList.remove('open'); return; }
+  var res = vehicleCache.filter(function(v) {
+    return (v.plateNumber||'').toLowerCase().indexOf(q)!==-1 || (v.carModel||'').toLowerCase().indexOf(q)!==-1;
+  }).slice(0,8);
+  if (!res.length) { dd.classList.remove('open'); return; }
+  dd.innerHTML = res.map(function(v) {
+    return '<div class="suggest-item" data-plate="'+eA(v.plateNumber||'')+'" data-price="'+(v.price||0)+'">'
+      + '<span class="suggest-plate">'+(v.plateNumber||'')+'</span>'
+      + '<span class="suggest-sub">'+(v.carModel||'')+' '+(v.area||'')+'</span></div>';
+  }).join('');
+  dd.querySelectorAll('.suggest-item').forEach(function(el) {
+    el.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      var desc = document.getElementById('liDesc_'+id);
+      var pr = document.getElementById('liPrice_'+id);
+      if (desc) desc.value = this.getAttribute('data-plate');
+      if (pr) pr.value = parseInt(this.getAttribute('data-price'))||0;
+      upLI(id,'ctText',this.getAttribute('data-plate'));
+      upLI(id,'price',parseInt(this.getAttribute('data-price'))||0);
+      dd.classList.remove('open');
+    });
+  });
+  dd.classList.add('open');
+}
+
+function upLI(id, field, value) {
+  var item = lineItems.find(function(i) { return i.id === id; });
+  if (!item) return;
+  if (field==='qty') item.qty = parseInt(value)||1;
+  if (field==='price') item.price = parseInt(value)||0;
+  if (field==='date') item.date = value;
+  if (field==='ctText') item.ctText = value;
+  if (field==='memo') item.memo = value;
+  updatePreview();
+}
+
+function delLI(id) {
+  lineItems = lineItems.filter(function(i) { return i.id !== id; });
+  var el = document.getElementById('li_'+id);
+  if (el) el.remove();
+  updatePreview();
+}
+
+// ============================================================
+// プレビュー更新
+// ============================================================
+var ROWS_PER_PAGE = 12;
+
+function updatePreview() {
+  setTxt('pvDate',   fmtDate(gv('invDate')));
+  setTxt('pvStart',  fmtDate(gv('invStart')));
+  setTxt('pvEnd',    fmtDate(gv('invEnd')));
+  setTxt('pvPayDate',fmtDate(gv('invPayDate')));
+  setTxt('pvNote',   gv('invNote')||'―');
+
+  var sel = document.getElementById('selClient');
+  if (sel.value) {
+    var c = clients.find(function(x) { return x.clientId === sel.value; });
+    if (c) setTxt('pvPartner', c.companyName);
+  }
+
+  var area = document.getElementById('pvTableArea');
+
+  if (!lineItems.length) {
+    area.innerHTML = '<table class="inv-table"><thead><tr><th style="width:6%">No.</th><th style="width:9%">月日</th><th style="width:26%">内容</th><th class="tr" style="width:8%">数量</th><th class="tr" style="width:14%">単価</th><th class="tr" style="width:14%">金額</th><th style="width:23%">備考</th></tr></thead>'
+      +'<tbody><tr><td colspan="7" style="color:#9ca3af;text-align:center;padding:20px;">明細を入力してください</td></tr></tbody></table>'
+      +'<div class="inv-note">備考：<span contenteditable="true">―</span></div>'
+      +'<div class="inv-bank"><div class="inv-bank-title">振込先</div>住信SBIネット銀行　法人第一支店<br>普通1419626</div>'
+      +'<div class="inv-footer-co">株式会社TASK</div>';
+    setTxt('pvTotal','0');
+    rescale();
+    return;
+  }
+
+  // 全明細行のHTMLとsubtotalを計算
+  var subtotal = 0;
+  var allRows = lineItems.map(function(item, idx) {
+    var label = (item.ct==='custom') ? (item.ctText||'―') : item.ct;
+    var amt = (item.qty||0)*(item.price||0);
+    subtotal += amt;
+    var dateStr = fmtShortDate(item.date);
+    return '<tr><td style="text-align:center;">'+(idx+1)+'</td><td>'+dateStr+'</td><td>'+label+'</td><td class="tr">'+(item.qty||1)+'</td><td class="tr">¥'+fmtM(item.price||0)+'</td><td class="tr">¥'+fmtM(amt)+'</td><td>'+(item.memo||'')+'</td></tr>';
+  });
+
+  var tax = Math.floor(subtotal * 0.1);
+  var total = subtotal + tax;
+
+  var theadHtml = '<thead><tr><th style="width:6%">No.</th><th style="width:9%">月日</th><th style="width:26%">内容</th><th class="tr" style="width:8%">数量</th><th class="tr" style="width:14%">単価</th><th class="tr" style="width:14%">金額</th><th style="width:23%">備考</th></tr></thead>';
+
+  var footerHtml = '<tfoot>'
+    +'<tr class="inv-tax-row"><td colspan="5" style="text-align:right;">小計</td><td class="tr">¥'+fmtM(subtotal)+'</td><td></td></tr>'
+    +'<tr class="inv-tax-row"><td colspan="5" style="text-align:right;">消費税（10%）</td><td class="tr">¥'+fmtM(tax)+'</td><td></td></tr>'
+    +'<tr class="inv-total-row"><td colspan="5" style="text-align:right;">合計</td><td class="tr">¥'+fmtM(total)+'</td><td></td></tr>'
+    +'</tfoot>';
+
+  var noteHtml = '<div class="inv-note">備考：<span contenteditable="true">'+(gv('invNote')||'―')+'</span></div>';
+  var bankHtml = '<div class="inv-bank"><div class="inv-bank-title">振込先</div>住信SBIネット銀行　法人第一支店<br>普通1419626</div>';
+  var coHtml = '<div class="inv-footer-co">株式会社TASK</div>';
+
+  // 1ページに収まる場合
+  if (allRows.length <= ROWS_PER_PAGE) {
+    area.innerHTML = '<table class="inv-table">'+theadHtml+'<tbody>'+allRows.join('')+'</tbody>'+footerHtml+'</table>'+noteHtml+bankHtml+coHtml;
+  } else {
+    // ページ分割
+    var pages = [];
+    for (var i = 0; i < allRows.length; i += ROWS_PER_PAGE) {
+      pages.push(allRows.slice(i, i + ROWS_PER_PAGE));
+    }
+
+    var html = '';
+    pages.forEach(function(pageRows, pageIdx) {
+      var isLast = pageIdx === pages.length - 1;
+
+      if (pageIdx > 0) {
+        // 2ページ目以降：改ページ + ミニヘッダー
+        html += '</div>'; // 前ページのinv-paperを閉じる
+        html += '<div class="inv-paper" style="page-break-before:always;margin-top:24px;">';
+        html += '<div style="font-size:12px;color:#6b7280;margin-bottom:12px;">請求書（'+(pageIdx+1)+'/'+pages.length+'ページ）</div>';
+      }
+
+      // テーブル
+      html += '<table class="inv-table">'+theadHtml+'<tbody>'+pageRows.join('')+'</tbody>';
+
+      if (isLast) {
+        // 最終ページに合計・備考・振込先
+        html += footerHtml+'</table>'+noteHtml+bankHtml+coHtml;
+      } else {
+        // 中間ページ：続きがある旨を表示
+        html += '</table>';
+        html += '<div style="text-align:right;font-size:11px;color:#9ca3af;margin-top:8px;">次ページに続く →</div>';
+      }
+    });
+
+    area.innerHTML = html;
+  }
+
+  setTxt('pvTotal',fmtM(total));
+  rescale();
+}
+
+// ============================================================
+// タブ切替・スケール・リセット
+// ============================================================
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelector('[data-tab="'+tab+'"]').classList.add('active');
+  if (window.innerWidth < 768) {
+    document.getElementById('panelInput').style.display = (tab==='input') ? 'flex' : 'none';
+    document.getElementById('panelPreview').style.display = (tab==='preview') ? 'flex' : 'none';
+    if (tab==='preview') rescale();
+  }
+}
+
+function rescale() {
+  var wrap = document.getElementById('invScaleWrap');
+  var inner = document.getElementById('invScaleInner');
+  var paper = document.getElementById('invPaper');
+  if (!wrap||!inner||!paper) return;
+  var w = wrap.offsetWidth;
+  if (w >= 794) {
+    inner.style.transform='none';
+    wrap.style.height='auto';
+  } else {
+    var s = w/794;
+    inner.style.transform='scale('+s+')';
+    // paperの実際の高さを正確に反映
+    wrap.style.height = Math.ceil(paper.scrollHeight * s) + 'px';
+  }
+}
+window.addEventListener('resize', rescale);
+
+function clearForm() {
+  if (lineItems.length > 0) { if (!confirm('入力内容をリセットしますか？')) return; }
+  ['invDate','invPayDate','invStart','invEnd','invNote'].forEach(function(id) { document.getElementById(id).value=''; });
+  lineItems = [];
+  document.getElementById('liArea').innerHTML = '';
+  liId = 0;
+  var d = new Date();
+  document.getElementById('invDate').value = d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  addLineItem();
+  updatePreview();
+  showToast('リセットしました');
+}
+
+// ============================================================
+// ユーティリティ
+// ============================================================
+function pad(n) { return String(n).padStart(2,'0'); }
+function eA(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function fmtDate(s) {
+  if (!s) return '―';
+  var parts = s.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+  if (parts) return parseInt(parts[1])+'年'+parseInt(parts[2])+'月'+parseInt(parts[3])+'日';
+  var d = new Date(s);
+  if (isNaN(d.getTime())) return s;
+  return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
+}
+function fmtShortDate(s) {
+  if (!s) return '―';
+  s = String(s).trim();
+  // 既に「M/D」形式ならそのまま
+  if (/^\d{1,2}\/\d{1,2}$/.test(s)) return s;
+  // 「yyyy-MM-dd」or「yyyy/MM/dd」形式
+  var m1 = s.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+  if (m1) return parseInt(m1[2])+'/'+parseInt(m1[3]);
+  // Dateオブジェクトの文字列表現（Sun Feb 01 2026...）
+  var d = new Date(s);
+  if (!isNaN(d.getTime())) return (d.getMonth()+1)+'/'+d.getDate();
+  // それ以外はそのまま返す
+  return s;
+}
+function fmtM(n) { return Number(n).toLocaleString('ja-JP'); }
+function gv(id) { var el=document.getElementById(id); return el ? el.value : ''; }
+function setTxt(id,txt) { var el=document.getElementById(id); if (!el||document.activeElement===el) return; el.textContent=txt; }
+function showToast(msg,isError) {
+  var t=document.getElementById('toast'); t.textContent=msg;
+  t.className='toast'+(isError?' error':''); t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2500);
+}
+
+function printPDF() {
+  // toastを確実に非表示にしてからprint
+  var t=document.getElementById('toast');
+  t.classList.remove('show');
+  t.style.display='none';
+  // スマホの場合はプレビュータブに切替
+  if (window.innerWidth < 768) switchTab('preview');
+  setTimeout(function() {
+    window.print();
+    // print後にtoastのstyleを戻す
+    t.style.display='';
+  }, 100);
+}
+
+// ============================================================
+// 起動
+// ============================================================
+init();
+</script>
+</body>
+</html>
