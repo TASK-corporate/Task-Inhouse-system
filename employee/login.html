@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>従業員ログイン</title>
+    <style>
+        /* 簡易的なスタイリング（画面中央にログインパネルを配置） */
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f6f8;
+            margin: 0;
+        }
+        .login-container {
+            background: white;
+            padding: 2.5rem 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 350px;
+        }
+        .login-container h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+        button {
+            background-color: #4285F4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #357ae8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h2>システム管理画面</h2>
+        <button id="login-btn">Googleでログイン</button>
+    </div>
+
+    <script type="module">
+        // 1. Firebase SDKのインポート
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // 2. Firebaseの設定情報（★ここをご自身のプロジェクト情報に書き換えてください）
+  const firebaseConfig = {
+    apiKey: "AIzaSyDFFCu6rz9_g64ca3X2Yf2FjoGjI9vo-sg",
+    authDomain: "authentication-88923.firebaseapp.com",
+    projectId: "authentication-88923",
+    storageBucket: "authentication-88923.firebasestorage.app",
+    messagingSenderId: "57880817285",
+    appId: "1:57880817285:web:91e6cc30b357b9f15a03ec",
+    measurementId: "G-GH172VCXC7"
+  };
+
+        // 3. Firebaseと認証の初期化
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // 4. 【重要】既にログイン状態かどうかの監視
+        // もし従業員が一度ログインしていてセッションが残っている場合、
+        // わざわざボタンを押させずに自動で index.html へ流す処理です。
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // ログイン済みなら保護ページへリダイレクト
+                window.location.href = './index.html';
+            }
+        });
+
+        // 5. ログインボタンが押された時の処理
+        document.getElementById('login-btn').addEventListener('click', () => {
+            signInWithPopup(auth, provider)
+                .then((result) => {
+                    // ログインが成功すると、上の onAuthStateChanged が反応して自動的に画面遷移します
+                    console.log("ログイン成功:", result.user.email);
+                })
+                .catch((error) => {
+                    console.error("ログインエラー:", error.code, error.message);
+                    alert("ログインに失敗しました。もう一度お試しください。");
+                });
+        });
+        // LINEブラウザからのアクセスを検知する処理
+        const userAgent = navigator.userAgent.toLowerCase();
+        if (userAgent.indexOf("line") > -1) {
+            alert("LINEのブラウザではログインできません。\n画面右下（または右上）のボタンから「デフォルトのブラウザで開く」または「Safari/Chromeで開く」を選択してください。");
+        }
+    </script>
+
+</body>
+</html>
