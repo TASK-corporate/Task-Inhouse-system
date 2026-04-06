@@ -27,6 +27,14 @@
     .suggest-item:hover { background:#f3f4f6; }
     .suggest-plate { font-weight:700; font-size:14px; }
     .suggest-sub { font-size:12px; color:#6b7280; margin-top:2px; }
+    /* 車両一覧 */
+    .vehicle-list { margin-bottom:16px; }
+    .vehicle-list-title { font-size:13px; color:#6b7280; margin-bottom:8px; }
+    .vl-item { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:#fff; border:1px solid #e5e7eb; margin-bottom:4px; cursor:pointer; transition:border-color .15s; }
+    .vl-item:hover { border-color:#111; }
+    .vl-plate { font-weight:700; font-size:14px; }
+    .vl-info { font-size:12px; color:#6b7280; margin-top:2px; }
+    .vl-arrow { color:#9ca3af; flex-shrink:0; }
     .status-bar { padding:12px 20px; font-size:13px; display:flex; align-items:center; gap:8px; margin-bottom:16px; }
     .status-bar.loaded { background:#d1fae5; color:#065f46; border:1px solid #a7f3d0; }
     .status-bar.error { background:#fee2e2; color:#991b1b; border:1px solid #fecaca; }
@@ -42,9 +50,19 @@
     .fg label { font-size:12px; font-weight:600; color:#6b7280; }
     .fg input, .fg select { padding:10px 12px; border:1.5px solid #d1d5db; font-size:14px; color:#111; width:100%; background:#fff; -webkit-appearance:none; }
     .fg input:focus, .fg select:focus { outline:none; border-color:#111; }
-    .fg select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; padding-right:30px; cursor:pointer; }
     .fg .cv { font-size:11px; color:#9ca3af; margin-top:2px; }
     .fg input.changed, .fg select.changed { border-color:#f59e0b; background:#fffbeb; }
+    /* 画像管理 */
+    .img-section-title { font-size:13px; font-weight:700; color:#374151; margin-bottom:8px; }
+    .images-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; margin-bottom:8px; }
+    .img-wrap { position:relative; }
+    .img-wrap img { width:100%; height:100px; object-fit:cover; border:2px solid #e5e7eb; cursor:pointer; }
+    .img-wrap img:hover { border-color:#000; }
+    .img-del-btn { position:absolute; top:2px; right:2px; width:24px; height:24px; background:rgba(0,0,0,.7); color:#fff; border:none; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .2s; }
+    .img-wrap:hover .img-del-btn { opacity:1; }
+    .img-add-btn { padding:8px 16px; background:#fff; border:2px dashed #d1d5db; color:#6b7280; font-size:13px; font-weight:600; cursor:pointer; width:100%; }
+    .img-add-btn:hover { border-color:#111; color:#111; }
+    .img-status { font-size:12px; color:#6b7280; margin-top:4px; }
     .submit-area { padding:20px; background:#fff; border:1px solid #e5e7eb; display:none; }
     .submit-area.visible { display:block; }
     .submit-btn { width:100%; padding:14px; background:#111; color:#fff; border:none; font-size:15px; font-weight:700; cursor:pointer; }
@@ -59,30 +77,8 @@
     .spinner-lg { width:32px; height:32px; border:3px solid #e5e7eb; border-top-color:#111; border-radius:50%; animation:spin .7s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
   </style>
-
-  <!-- Firebase Auth Check -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    const firebaseConfig = {
-      apiKey: "AIzaSyDT6LEWn2MUHjRB_QoVApWi4k7M5kgkIEE",
-      authDomain: "task-system-login.firebaseapp.com",
-      projectId: "task-system-login",
-      storageBucket: "task-system-login.firebasestorage.app",
-      messagingSenderId: "148812118192",
-      appId: "1:148812118192:web:ecc481c04f034d89fda375"
-    };
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = 'login.html';
-      } else {
-        document.body.style.visibility = 'visible';
-      }
-    });
-  </script>
-  <style>body{visibility:hidden;}</style>
+  <script src="../config.js"></script>
+  <script src="../auth.js"></script>
 </head>
 <body>
 <div class="header"><div class="header-inner">
@@ -91,12 +87,16 @@
 </div></div>
 <div class="container">
   <div class="search-section">
-    <div class="search-label">修正する車両のナンバーを入力</div>
+    <div class="search-label">修正する車両を検索または一覧から選択</div>
     <div class="search-wrap">
-      <input type="text" id="searchPlate" placeholder="ナンバーを入力して検索..." autocomplete="off">
+      <input type="text" id="searchPlate" placeholder="ナンバー・車種で検索..." autocomplete="off" oninput="filterList()">
       <div class="suggest-list" id="suggestList"></div>
     </div>
   </div>
+
+  <!-- 車両一覧 -->
+  <div class="vehicle-list" id="vehicleList"></div>
+
   <div id="statusBar" style="display:none;"></div>
 
   <div class="form-section" id="sec1">
@@ -108,11 +108,8 @@
         <div class="fg"><label>車台番号</label><input type="text" id="eChassis" data-field="chassisNumber"><div class="cv" id="cvChassisNumber"></div></div>
       </div>
       <div class="form-row">
-        <div class="fg"><label>状態</label><select id="eStatus" data-field="status"><option value="貸出中">貸出中</option><option value="販売可">販売可</option><option value="修理中">修理中</option><option value="要修理">要修理</option><option value="代車">代車</option><option value="廃車">廃車</option><option value="その他">その他</option></select><div class="cv" id="cvStatus"></div></div>
-        <div class="fg"><label>エリア</label><select id="eArea" data-field="area"><option value="大阪">大阪</option><option value="名古屋">名古屋</option><option value="東京">東京</option></select><div class="cv" id="cvArea"></div></div>
-      </div>
-      <div class="form-row">
-        <div class="fg"><label>管理場所</label><select id="eStorageLocation" data-field="storageLocation"><option value="">未設定</option><option value="場所A">場所A</option><option value="場所B">場所B</option><option value="場所C">場所C</option></select><div class="cv" id="cvStorageLocation"></div></div>
+        <div class="fg"><label>状態</label><select id="eStatus" data-field="status"><option value="貸出中">貸出中</option><option value="販売可">販売可</option><option value="貸出可">貸出可</option><option value="修理中">修理中</option><option value="要修理">要修理</option><option value="代車">代車</option><option value="廃車">廃車</option><option value="その他">その他</option></select><div class="cv" id="cvStatus"></div></div>
+        <div class="fg"><label>エリア</label><select id="eArea" data-field="area"><option value="">未設定</option><option value="大阪">大阪</option><option value="名古屋">名古屋</option><option value="東京">東京</option></select><div class="cv" id="cvArea"></div></div>
       </div>
       <div class="form-row">
         <div class="fg"><label>貸出先</label><input type="text" id="eLoanDest" data-field="loanDest"><div class="cv" id="cvLoanDest"></div></div>
@@ -124,8 +121,8 @@
     <div class="form-section-title">契約情報</div>
     <div class="form-section-body">
       <div class="form-row">
-        <div class="fg"><label>所有者</label><select id="eOwner" data-field="owner"><option value="TASK">TASK</option><option value="オリックス">オリックス</option><option value="その他">その他</option></select><div class="cv" id="cvOwner"></div></div>
-        <div class="fg"><label>任意保険</label><select id="eInsurance" data-field="insurance"><option value="">未設定</option><option value="無保険">無保険</option><option value="ソニー損保">ソニー損保</option><option value="東京海上日動">東京海上日動</option><option value="その他">その他</option></select><div class="cv" id="cvInsurance"></div></div>
+        <div class="fg"><label>所有者</label><select id="eOwner" data-field="owner"><option value="株式会社TASK">株式会社TASK</option><option value="オリックス">オリックス</option><option value="W-FINANCE(TASK)">W-FINANCE(TASK)</option><option value="その他">その他</option></select><div class="cv" id="cvOwner"></div></div>
+        <div class="fg"><label>任意保険</label><input type="text" id="eInsurance" data-field="insurance"><div class="cv" id="cvInsurance"></div></div>
       </div>
       <div class="form-row">
         <div class="fg"><label>レンタル料金</label><input type="number" id="ePrice" data-field="price"><div class="cv" id="cvPrice"></div></div>
@@ -162,6 +159,11 @@
       </div>
     </div>
   </div>
+  <!-- 画像管理セクション -->
+  <div class="form-section" id="sec6">
+    <div class="form-section-title">画像管理</div>
+    <div class="form-section-body" id="imageEditArea"></div>
+  </div>
   <div class="submit-area" id="submitArea">
     <button class="submit-btn" id="submitBtn" onclick="submitModify()">変更を保存する</button>
     <div class="change-count" id="changeCount"></div>
@@ -170,40 +172,53 @@
 <div class="loading-overlay" id="loadingOverlay"><div class="spinner-lg"></div><div style="font-size:14px;color:#6b7280;">保存中...</div></div>
 <div class="toast" id="toast"></div>
 <script>
-var GAS_URL='https://script.google.com/macros/s/AKfycby7_ciZ-bUMTNB3JG6M7YOl2JIamfaiTnIkiWsxn0JYAYsKWWBKrJ4lxh4eE0kiIJts/exec';
-var API_KEY='task_employee_keiban.1000';
+var GAS_URL = APP_CONFIG.GAS_URL;
+var API_KEY = APP_CONFIG.API_KEY_EMPLOYEE;
 var vehicleCache=[],vehicleLoaded=false,originalData=null,selectedPlate='';
 
 function loadVehicles(callback) {
   fetch(GAS_URL+'?role=employee&key='+API_KEY)
     .then(function(r){return r.json();})
-    .then(function(d){ if(Array.isArray(d)){vehicleCache=d;vehicleLoaded=true;} if(callback)callback(); })
+    .then(function(d){ if(Array.isArray(d)){vehicleCache=d;vehicleLoaded=true;renderVehicleList();} if(callback)callback(); })
     .catch(function(){if(callback)callback();});
 }
 
-// サジェスト
+// 車両一覧表示
+function renderVehicleList(filter){
+  var el=document.getElementById('vehicleList');
+  var kw=(filter||'').trim().toLowerCase();
+  var list=vehicleCache;
+  if(kw){list=list.filter(function(v){return(v.plateNumber||'').toLowerCase().indexOf(kw)!==-1||(v.carModel||'').toLowerCase().indexOf(kw)!==-1||(v.loanDest||'').toLowerCase().indexOf(kw)!==-1;});}
+  if(!list.length){el.innerHTML=kw?'<div style="color:#9ca3af;text-align:center;padding:20px">一致する車両がありません</div>':'';return;}
+  el.innerHTML='<div class="vehicle-list-title">'+list.length+'台'+(kw?' (絞込中)':'')+'</div>'
+    +list.map(function(v){
+      return '<div class="vl-item" onclick="selectVehicle(\''+((v.plateNumber||'').replace(/'/g,"\\'"))+'\')">'
+        +'<div><div class="vl-plate">'+(v.plateNumber||'-')+'</div><div class="vl-info">'+(v.carModel||'')+' ／ '+(v.status||'')+' ／ '+(v.loanDest||'未貸出')+'</div></div>'
+        +'<div class="vl-arrow"><svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div></div>';
+    }).join('');
+}
+function filterList(){renderVehicleList(document.getElementById('searchPlate').value);}
+
+// サジェスト（エンターキー用に残す）
 var searchInput=document.getElementById('searchPlate');
-var suggestList=document.getElementById('suggestList');
-searchInput.addEventListener('input',function(){
-  var q=this.value.trim().toLowerCase();
-  if(!q||!vehicleLoaded){suggestList.classList.remove('open');return;}
-  var res=vehicleCache.filter(function(v){return(v.plateNumber||'').toLowerCase().indexOf(q)!==-1||(v.carModel||'').toLowerCase().indexOf(q)!==-1;}).slice(0,10);
-  if(!res.length){suggestList.classList.remove('open');return;}
-  suggestList.innerHTML=res.map(function(v){return '<div class="suggest-item" data-plate="'+(v.plateNumber||'')+'"><div class="suggest-plate">'+(v.plateNumber||'')+'</div><div class="suggest-sub">'+(v.carModel||'')+' '+(v.area||'')+' '+(v.status||'')+'</div></div>';}).join('');
-  suggestList.querySelectorAll('.suggest-item').forEach(function(el){el.addEventListener('mousedown',function(e){e.preventDefault();selectVehicle(this.getAttribute('data-plate'));});});
-  suggestList.classList.add('open');
+searchInput.addEventListener('keydown',function(e){
+  if(e.key==='Enter'){
+    var q=this.value.trim().toLowerCase();
+    var f=vehicleCache.find(function(v){return(v.plateNumber||'').toLowerCase()===q;});
+    if(f){e.preventDefault();selectVehicle(f.plateNumber);}
+  }
 });
-searchInput.addEventListener('blur',function(){setTimeout(function(){suggestList.classList.remove('open');},200);});
-searchInput.addEventListener('keydown',function(e){if(e.key==='Enter'){var f=suggestList.querySelector('.suggest-item');if(f){e.preventDefault();selectVehicle(f.getAttribute('data-plate'));}}});
 
 function selectVehicle(plate){
-  suggestList.classList.remove('open');
-  searchInput.value=plate;
+  document.getElementById('searchPlate').value=plate;
   selectedPlate=plate;
   var v=vehicleCache.find(function(x){return x.plateNumber===plate;});
   if(!v){showStatus('error','データが見つかりません');return;}
   originalData=v;
   showStatus('loaded',plate+' を読み込みました');
+  // 一覧を非表示
+  document.getElementById('vehicleList').style.display='none';
+  // フォームに値をセット
   document.querySelectorAll('[data-field]').forEach(function(el){
     var field=el.getAttribute('data-field');
     var val=v[field]; if(val===undefined||val===null) val='';
@@ -211,13 +226,87 @@ function selectVehicle(plate){
     var cv=document.getElementById('cv'+field.charAt(0).toUpperCase()+field.slice(1));
     if(cv) cv.textContent='現在: '+(val||'未設定');
   });
-  ['sec1','sec2','sec3','sec4','sec5'].forEach(function(id){document.getElementById(id).classList.add('visible');});
+  ['sec1','sec2','sec3','sec4','sec5','sec6'].forEach(function(id){document.getElementById(id).classList.add('visible');});
   document.getElementById('submitArea').classList.add('visible');
+  // 画像セクション描画
+  renderImageEdit(v);
   updateChangeCount();
   document.querySelectorAll('[data-field]').forEach(function(el){
     el.removeEventListener('input',onFieldChange);el.removeEventListener('change',onFieldChange);
     el.addEventListener('input',onFieldChange);el.addEventListener('change',onFieldChange);
   });
+}
+
+// 画像編集エリア
+function renderImageEdit(v){
+  var area=document.getElementById('imageEditArea');
+  area.innerHTML=buildImgEdit('公開画像（顧客にも表示）',v.imagesPublic,'public')
+    +buildImgEdit('社内画像（社内のみ）',v.imagesInternal,'internal');
+}
+function buildImgEdit(title,images,type){
+  var inputId='mImgUpload_'+type;
+  var statusId='mImgStatus_'+type;
+  var html='<div style="margin-bottom:16px"><div class="img-section-title">'+title+(images&&images.length?' ('+images.length+'枚)':'')+'</div>';
+  if(images&&images.length>0){
+    html+='<div class="images-grid">';
+    images.forEach(function(img){
+      var url=typeof img==='object'?img.url:img;
+      var fid=typeof img==='object'?img.fileId:'';
+      html+='<div class="img-wrap"><img src="'+url+'" onclick="window.open(\''+url+'\',\'_blank\')">';
+      if(fid){html+='<button class="img-del-btn" onclick="event.stopPropagation();mDeleteImage(\''+fid+'\',\''+type+'\')">×</button>';}
+      html+='</div>';
+    });
+    html+='</div>';
+  }
+  html+='<button class="img-add-btn" onclick="document.getElementById(\''+inputId+'\').click()">＋ 画像を追加</button>'
+    +'<input type="file" id="'+inputId+'" multiple accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="mUploadImages(this.files,\''+type+'\')">'
+    +'<div class="img-status" id="'+statusId+'"></div></div>';
+  return html;
+}
+
+function mUploadImages(files,type){
+  if(!originalData||!files.length)return;
+  var status=document.getElementById('mImgStatus_'+type);
+  status.textContent='アップロード中...';
+  var images=[];var loaded=0;
+  Array.from(files).forEach(function(file){
+    var reader=new FileReader();
+    reader.onload=function(e){images.push({name:file.name,base64:e.target.result});loaded++;if(loaded===files.length)doUpload();};
+    reader.readAsDataURL(file);
+  });
+  function doUpload(){
+    fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({
+      action:'uploadImage',key:API_KEY,plate:selectedPlate,imageType:type,images:images
+    })})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      status.textContent='';
+      if(data.error){showToast(data.error,true);}
+      else{
+        showToast(data.uploaded+'枚アップロード完了');
+        var arrKey=type==='internal'?'imagesInternal':'imagesPublic';
+        if(!originalData[arrKey])originalData[arrKey]=[];
+        if(data.images)data.images.forEach(function(img){originalData[arrKey].push(img);});
+        renderImageEdit(originalData);
+      }
+    }).catch(function(err){status.textContent='';showToast('通信エラー',true);});
+  }
+  document.getElementById('mImgUpload_'+type).value='';
+}
+
+function mDeleteImage(fileId,type){
+  if(!confirm('この画像を削除しますか？'))return;
+  fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'deleteImage',key:API_KEY,fileId:fileId})})
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(data.error){showToast(data.error,true);}
+    else{
+      showToast('削除しました');
+      var arrKey=type==='internal'?'imagesInternal':'imagesPublic';
+      if(originalData[arrKey]){originalData[arrKey]=originalData[arrKey].filter(function(img){return(typeof img==='object'?img.fileId:'')!==fileId;});}
+      renderImageEdit(originalData);
+    }
+  }).catch(function(err){showToast('通信エラー',true);});
 }
 
 function onFieldChange(e){var el=e.target,field=el.getAttribute('data-field');el.classList.toggle('changed',el.value!==String(originalData[field]||''));updateChangeCount();}
@@ -229,10 +318,9 @@ function submitModify(){
   var changes={};
   document.querySelectorAll('[data-field].changed').forEach(function(el){changes[el.getAttribute('data-field')]=el.value;});
   if(!Object.keys(changes).length){showToast('変更がありません',true);return;}
-  var body={action:'modifyVehicle',key:API_KEY,plate:selectedPlate,changes:changes,email:''};
   document.getElementById('submitBtn').disabled=true;
   document.getElementById('loadingOverlay').classList.add('active');
-  fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)})
+  fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'modifyVehicle',key:API_KEY,plate:selectedPlate,changes:changes,email:''})})
     .then(function(r){return r.json();})
     .then(function(data){
       document.getElementById('loadingOverlay').classList.remove('active');
@@ -240,20 +328,16 @@ function submitModify(){
       if(data.error) showToast(data.error,true);
       else{showToast('修正完了：'+selectedPlate);loadVehicles(function(){selectVehicle(selectedPlate);});}
     })
-    .catch(function(err){document.getElementById('loadingOverlay').classList.remove('active');document.getElementById('submitBtn').disabled=false;showToast('通信エラー：'+err.message,true);});
+    .catch(function(err){document.getElementById('loadingOverlay').classList.remove('active');document.getElementById('submitBtn').disabled=false;showToast('通信エラー',true);});
 }
 
 function showToast(msg,isError){var t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(isError?' error':'');t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
 
-// ============================================================
-// 起動：URLパラメータ ?plate=xxx があれば自動ロード
-// ============================================================
+// 起動
 loadVehicles(function() {
   var params = new URLSearchParams(window.location.search);
   var plateParam = params.get('plate');
-  if (plateParam) {
-    selectVehicle(decodeURIComponent(plateParam));
-  }
+  if (plateParam) selectVehicle(decodeURIComponent(plateParam));
 });
 </script>
 </body>
