@@ -172,30 +172,8 @@
       @page { margin:0; size:A4 portrait; }
     }
   </style>
-
-  <!-- Firebase Auth Check -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    const firebaseConfig = {
-      apiKey: "AIzaSyDT6LEWn2MUHjRB_QoVApWi4k7M5kgkIEE",
-      authDomain: "task-system-login.firebaseapp.com",
-      projectId: "task-system-login",
-      storageBucket: "task-system-login.firebasestorage.app",
-      messagingSenderId: "148812118192",
-      appId: "1:148812118192:web:ecc481c04f034d89fda375"
-    };
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = 'login.html';
-      } else {
-        document.body.style.visibility = 'visible';
-      }
-    });
-  </script>
-  <style>body{visibility:hidden;}</style>
+  <script src="../config.js"></script>
+  <script src="../auth.js"></script>
 </head>
 <body>
 
@@ -333,8 +311,8 @@
 // ============================================================
 // 設定
 // ============================================================
-var GAS_URL='https://script.google.com/macros/s/AKfycby7_ciZ-bUMTNB3JG6M7YOl2JIamfaiTnIkiWsxn0JYAYsKWWBKrJ4lxh4eE0kiIJts/exec';
-var API_KEY='task_employee_keiban.1000';
+var GAS_URL = APP_CONFIG.GAS_URL;
+var API_KEY = APP_CONFIG.API_KEY_EMPLOYEE;
 
 var clients       = [];      // 取引先マスター
 var vehicleCache  = [];      // 車両データ
@@ -389,6 +367,19 @@ function loadClients() {
         el.innerHTML = '✓ ' + data.length + '社';
         el.style.color = '#059669';
         setTimeout(function() { el.innerHTML = ''; }, 3000);
+
+        // URLパラメータから自動選択
+        var urlParams = new URLSearchParams(window.location.search);
+        var presetClient = urlParams.get('client');
+        if (presetClient) {
+          sel.value = presetClient;
+          sel.dispatchEvent(new Event('change'));
+          // inv パラメータがあれば請求書も読み込み
+          var presetInv = urlParams.get('inv');
+          if (presetInv) {
+            setTimeout(function() { loadInvoice(presetInv); }, 500);
+          }
+        }
       } else { throw new Error(); }
     })
     .catch(function() {
@@ -483,7 +474,10 @@ function loadInvoice(invoiceId) {
       liId = 0;
       if (data.lines && data.lines.length) {
         data.lines.forEach(function(line) {
-          addLineItem(line.date, line.itemType, line.itemText, line.qty, line.price, line.memo);
+          // 月日を M/D 形式に正規化
+          var normalizedDate = fmtShortDate(line.date);
+          if (normalizedDate === '―') normalizedDate = '';
+          addLineItem(normalizedDate, line.itemType, line.itemText, line.qty, line.price, line.memo);
         });
       } else { addLineItem(); }
       updatePreview();
@@ -502,13 +496,64 @@ function copyLastMonth() {
   if (!clientId) { showToast('取引先を選択してください', true); return; }
   if (!month)    { showToast('年月を選択してください', true); return; }
 
-  // 前月を計算
   var parts = month.split('-');
   var y = parseInt(parts[0]), m = parseInt(parts[1]) - 1;
   if (m === 0) { y--; m = 12; }
   var prevId = clientId + '-' + y + pad(m);
+  var currentMonth = parseInt(parts[1]);
 
-  loadInvoice(prevId);
+  // 先にダイアログを表示して選択させる
+  var overlay = document.createElement('div');
+  overlay.id = 'copyMonthDialog';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = '<div style="background:#fff;padding:28px;max-width:340px;width:90%;text-align:center;font-family:sans-serif">'
+    + '<h3 style="font-size:16px;font-weight:700;margin-bottom:12px">' + m + '月のデータを読み込みます</h3>'
+    + '<p style="font-size:14px;color:#6b7280;margin-bottom:20px">明細の月日を ' + currentMonth + '月に変換しますか？<br><span style="font-size:12px">例：' + m + '/1 → ' + currentMonth + '/1</span></p>'
+    + '<button id="copyConvertYes" style="display:block;width:100%;padding:14px;background:#111;color:#fff;font-size:15px;font-weight:700;border:none;cursor:pointer;margin-bottom:10px">' + currentMonth + '月に変換して読み込む</button>'
+    + '<button id="copyConvertNo" style="display:block;width:100%;padding:12px;background:#fff;color:#6b7280;border:1.5px solid #d1d5db;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px">そのまま読み込む</button>'
+    + '<button id="copyCancel" style="display:block;width:100%;padding:10px;background:none;border:none;color:#9ca3af;font-size:13px;cursor:pointer">キャンセル</button>'
+    + '</div>';
+  document.body.appendChild(overlay);
+
+  document.getElementById('copyCancel').onclick = function() { overlay.remove(); };
+  document.getElementById('copyConvertYes').onclick = function() { overlay.remove(); doImport(true); };
+  document.getElementById('copyConvertNo').onclick = function() { overlay.remove(); doImport(false); };
+
+  function doImport(doConvert) {
+    showToast('読み込み中...');
+    fetch(GAS_URL + '?action=invoice&id=' + prevId + '&key=' + API_KEY)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data || data.error) { showToast(data.error || '前月データがありません', true); return; }
+
+        if (data.meta) {
+          document.getElementById('invDate').value    = '';
+          document.getElementById('invPayDate').value = '';
+          document.getElementById('invStart').value   = '';
+          document.getElementById('invEnd').value     = '';
+          document.getElementById('invNote').value    = data.meta.invNote || '';
+        }
+
+        lineItems = [];
+        document.getElementById('liArea').innerHTML = '';
+        liId = 0;
+        if (data.lines && data.lines.length) {
+          data.lines.forEach(function(line) {
+            var dateStr = fmtShortDate(line.date);
+            if (dateStr === '―') dateStr = '';
+            if (doConvert && dateStr) {
+              var dm = dateStr.match(/^(\d{1,2})\/(\d{1,2})$/);
+              if (dm) { dateStr = currentMonth + '/' + dm[2]; }
+            }
+            addLineItem(dateStr, line.itemType, line.itemText, line.qty, line.price, line.memo);
+          });
+        } else { addLineItem(); }
+        updatePreview();
+        showToast(m + '月のデータを読み込みました' + (doConvert ? '（' + currentMonth + '月に変換済み）' : ''));
+        if (window.innerWidth < 768) switchTab('preview');
+      })
+      .catch(function(err) { showToast('通信エラー: ' + err.message, true); });
+  }
 }
 
 // ============================================================
@@ -870,17 +915,75 @@ function showToast(msg,isError) {
 }
 
 function printPDF() {
-  // toastを確実に非表示にしてからprint
-  var t=document.getElementById('toast');
-  t.classList.remove('show');
-  t.style.display='none';
-  // スマホの場合はプレビュータブに切替
-  if (window.innerWidth < 768) switchTab('preview');
-  setTimeout(function() {
-    window.print();
-    // print後にtoastのstyleを戻す
-    t.style.display='';
-  }, 100);
+  var clientId = document.getElementById('selClient').value;
+  var month = document.getElementById('selMonth').value;
+  if (!clientId) { showToast('取引先を選択してください', true); return; }
+  if (!month) { showToast('年月を選択してください', true); return; }
+
+  var yearMonth = month.replace('-', '');
+  var body = {
+    action: 'generateInvoicePDF',
+    key: API_KEY,
+    clientId: clientId,
+    yearMonth: yearMonth,
+    meta: {
+      invDate: gv('invDate'),
+      invPayDate: gv('invPayDate'),
+      invStart: gv('invStart'),
+      invEnd: gv('invEnd'),
+      invNote: gv('invNote'),
+    },
+    lines: lineItems.map(function(item, idx) {
+      var label = (item.ct === 'custom') ? (item.ctText || '') : item.ct;
+      return {
+        lineNo: idx + 1,
+        date: item.date || '',
+        itemText: label,
+        qty: item.qty || 1,
+        price: item.price || 0,
+        memo: item.memo || ''
+      };
+    })
+  };
+
+  var pdfBtn = document.querySelector('.btn-print');
+  pdfBtn.disabled = true;
+  pdfBtn.innerHTML = '<div style="width:14px;height:14px;border:2px solid #d1d5db;border-top-color:#111;border-radius:50%;animation:spin .7s linear infinite"></div><span class="btn-label">生成中...</span>';
+
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(body)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    pdfBtn.disabled = false;
+    pdfBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg><span class="btn-label">PDF保存</span>';
+    if (data.error) {
+      showToast(data.error, true);
+    } else {
+      showToast('PDF保存完了 ✓ LINEに通知済み');
+      // Driveリンクを表示
+      if (data.fileUrl) {
+        var overlay = document.createElement('div');
+        overlay.id = 'pdfOverlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+        overlay.innerHTML = '<div style="background:#fff;padding:32px;max-width:360px;width:90%;text-align:center;font-family:sans-serif">'
+          + '<h2 style="font-size:18px;font-weight:700;margin-bottom:12px">PDF保存完了</h2>'
+          + '<p style="font-size:14px;color:#6b7280;margin-bottom:20px">' + (data.fileName || '') + '</p>'
+          + '<a href="' + data.fileUrl + '" target="_blank" style="display:inline-block;padding:14px 32px;background:#111;color:#fff;font-size:15px;font-weight:700;text-decoration:none;margin-bottom:12px">Driveで開く</a>'
+          + '<p style="font-size:12px;color:#9ca3af;margin-bottom:16px">LINEにもリンクを送信しました</p>'
+          + '<button onclick="document.getElementById(\'pdfOverlay\').remove()" style="padding:10px 24px;background:#fff;border:1.5px solid #d1d5db;color:#6b7280;font-size:14px;font-weight:600;cursor:pointer">閉じる</button>'
+          + '</div>';
+        document.body.appendChild(overlay);
+      }
+    }
+  })
+  .catch(function(err) {
+    pdfBtn.disabled = false;
+    pdfBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg><span class="btn-label">PDF保存</span>';
+    showToast('通信エラー: ' + err.message, true);
+  });
 }
 
 // ============================================================
