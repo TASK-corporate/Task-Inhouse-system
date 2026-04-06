@@ -63,6 +63,7 @@
     .hidden { display:none; }
     svg { width:24px; height:24px; }
   </style>
+  <script src="../config.js"></script>
 </head>
 <body>
 <div id="listView" class="customer-container">
@@ -83,8 +84,8 @@
 </div>
 
 <script>
-var GAS_URL='https://script.google.com/macros/s/AKfycbzg25Repkf_RQgMdQJK_kpk-J_GZFwbUeZBdaKNewiNrbcsFU3ATdqQkWJtZChana3K/exec';
-var API_KEY='clients_task_keiban';
+var GAS_URL = APP_CONFIG.GAS_URL;
+var API_KEY = APP_CONFIG.API_KEY_CLIENT;
 var vehicles=[];
 
 function fetchData(){
@@ -106,7 +107,7 @@ function renderList(){
   var html='';
   sorted.forEach(function(v){
     var ok=v.status==='貸出可';
-    var img=v.images&&v.images.length>0?v.images[0]:'https://placehold.co/400x300/e5e7eb/6b7280?text=No+Image';
+    var img=v.images&&v.images.length>0?(typeof v.images[0]==='object'?v.images[0].url:v.images[0]):'https://placehold.co/400x300/e5e7eb/6b7280?text=No+Image';
     html+='<div class="vehicle-card'+(ok?'':' unavailable')+'" onclick="showDetail('+v.id+')">'
       +'<div class="vehicle-card-inner">'
       +'<img src="'+img+'" class="vehicle-image" alt="'+(v.carModel||'')+'">'
@@ -131,10 +132,13 @@ function showDetail(id){
 
   // 画像ギャラリー
   var gHtml='';
-  if(v.images&&v.images.length>0&&v.images[0].indexOf('placehold')===-1){
-    gHtml='<div class="gallery"><div class="main-img-wrap"><img id="mainImage" src="'+v.images[0]+'" class="main-img"><div class="img-counter"><span id="imgNum">1</span> / '+v.images.length+'</div></div>';
-    if(v.images.length>1){gHtml+='<div class="thumb-grid">';v.images.forEach(function(url,i){gHtml+='<div class="thumb'+(i===0?' active':'')+'" onclick="changeImg('+i+','+v.id+')"><img src="'+url+'"></div>';});gHtml+='</div>';}
-    gHtml+='</div>';
+  if(v.images&&v.images.length>0){
+    var firstUrl=typeof v.images[0]==='object'?v.images[0].url:v.images[0];
+    if(firstUrl.indexOf('placehold')===-1){
+      gHtml='<div class="gallery"><div class="main-img-wrap"><img id="mainImage" src="'+firstUrl+'" class="main-img"><div class="img-counter"><span id="imgNum">1</span> / '+v.images.length+'</div></div>';
+      if(v.images.length>1){gHtml+='<div class="thumb-grid">';v.images.forEach(function(img,i){var u=typeof img==='object'?img.url:img;gHtml+='<div class="thumb'+(i===0?' active':'')+'" onclick="changeImg('+i+','+v.id+')"><img src="'+u+'"></div>';});gHtml+='</div>';}
+      gHtml+='</div>';
+    } else { gHtml='<img src="https://placehold.co/400x300/e5e7eb/6b7280?text=No+Image" class="main-img">'; }
   } else { gHtml='<img src="https://placehold.co/400x300/e5e7eb/6b7280?text=No+Image" class="main-img">'; }
 
   document.getElementById('detailContent').innerHTML=gHtml
@@ -157,7 +161,8 @@ function showDetail(id){
 function changeImg(i,vid){
   var v=vehicles.find(function(x){return x.id===vid;});
   if(!v||!v.images[i]) return;
-  document.getElementById('mainImage').src=v.images[i];
+  var url=typeof v.images[i]==='object'?v.images[i].url:v.images[i];
+  document.getElementById('mainImage').src=url;
   document.getElementById('imgNum').textContent=i+1;
   document.querySelectorAll('.thumb').forEach(function(t,j){t.classList.toggle('active',j===i);});
 }
