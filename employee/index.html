@@ -63,6 +63,15 @@
     .images-grid img{width:100%;height:140px;object-fit:cover;border:2px solid #e5e7eb;cursor:pointer;transition:transform .2s}
     .images-grid img:hover{transform:scale(1.05);border-color:#000}
     .no-images{color:#9ca3af;font-size:14px;padding:20px;text-align:center;background:#f9fafb}
+    .img-wrap{position:relative;display:inline-block}
+    .img-wrap img{width:100%;height:140px;object-fit:cover;border:2px solid #e5e7eb;cursor:pointer;transition:transform .2s}
+    .img-wrap img:hover{transform:scale(1.02);border-color:#000}
+    .img-del-btn{position:absolute;top:4px;right:4px;width:28px;height:28px;background:rgba(0,0,0,.7);color:#fff;border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+    .img-wrap:hover .img-del-btn{opacity:1}
+    .img-add-area{margin-top:12px}
+    .img-add-btn{padding:10px 20px;background:#fff;border:2px dashed #d1d5db;color:#6b7280;font-size:14px;font-weight:600;cursor:pointer;width:100%;transition:border-color .2s}
+    .img-add-btn:hover{border-color:#111;color:#111}
+    #imgUploadStatus{font-size:13px;color:#6b7280;margin-top:8px;text-align:center}
 
     /* アクションボタン */
     .detail-actions{display:flex;gap:12px;margin-top:24px;padding-top:24px;border-top:1px solid #e5e7eb}
@@ -93,30 +102,8 @@
     .hidden{display:none}
     svg{width:24px;height:24px}
   </style>
-
-  <!-- Firebase Auth Check -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    const firebaseConfig = {
-      apiKey: "AIzaSyDT6LEWn2MUHjRB_QoVApWi4k7M5kgkIEE",
-      authDomain: "task-system-login.firebaseapp.com",
-      projectId: "task-system-login",
-      storageBucket: "task-system-login.firebasestorage.app",
-      messagingSenderId: "148812118192",
-      appId: "1:148812118192:web:ecc481c04f034d89fda375"
-    };
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = 'login.html';
-      } else {
-        document.body.style.visibility = 'visible';
-      }
-    });
-  </script>
-  <style>body{visibility:hidden;}</style>
+  <script src="../config.js"></script>
+  <script src="../auth.js"></script>
 </head>
 <body>
 <div id="listView" class="container">
@@ -160,8 +147,8 @@
 <div class="toast" id="toast"></div>
 
 <script>
-var GAS_URL='https://script.google.com/macros/s/AKfycby7_ciZ-bUMTNB3JG6M7YOl2JIamfaiTnIkiWsxn0JYAYsKWWBKrJ4lxh4eE0kiIJts/exec';
-var API_KEY='task_employee_keiban.1000';
+var GAS_URL = APP_CONFIG.GAS_URL;
+var API_KEY = APP_CONFIG.API_KEY_EMPLOYEE;
 var vehicles=[];
 var editMode=false;
 var currentVehicle=null;
@@ -249,12 +236,10 @@ function showDetail(id){
 }
 
 function renderViewMode(v){
-  var imgHtml='';
-  if(v.images&&v.images.length>0&&v.images[0].indexOf('placehold')===-1){
-    imgHtml='<div class="images-section"><div class="images-title">車両画像 ('+v.images.length+'枚)</div><div class="images-grid">';
-    v.images.forEach(function(url){imgHtml+='<img src="'+url+'" onclick="window.open(\''+url+'\',\'_blank\')" title="クリックで拡大">';});
-    imgHtml+='</div></div>';
-  }else{imgHtml='<div class="images-section"><div class="images-title">車両画像</div><div class="no-images">画像なし</div></div>';}
+  // 公開画像セクション
+  var imgHtml=buildImageSection('公開画像（顧客にも表示）', v.imagesPublic, 'public');
+  // 社内画像セクション
+  imgHtml+=buildImageSection('社内画像（社内のみ）', v.imagesInternal, 'internal');
 
   var grid='<div class="detail-grid">'
     +di('自動車ナンバー',v.plateNumber)+di('車種',v.carModel)+di('車台番号',v.chassisNumber)
@@ -316,12 +301,19 @@ function enterEditMode(){
     +ti('note','備考',v.note)
     +'</div>';
 
+  // 編集モード内の画像管理
+  var imgEdit='<div style="margin-top:20px">'
+    +'<div class="edit-section-title">画像管理</div>'
+    +buildImageSection('公開画像（顧客にも表示）', v.imagesPublic, 'public')
+    +buildImageSection('社内画像（社内のみ）', v.imagesInternal, 'internal')
+    +'</div>';
+
   var actions='<div class="detail-actions">'
     +'<button class="action-btn btn-save-edit" onclick="saveEdit()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>保存する</button>'
     +'<button class="action-btn btn-cancel" onclick="cancelEdit()">キャンセル</button>'
     +'</div>';
 
-  document.getElementById('detailContent').innerHTML='<div class="detail-title"><h3>'+(v.plateNumber||'-')+'</h3><p>編集中</p></div>'+form+actions;
+  document.getElementById('detailContent').innerHTML='<div class="detail-title"><h3>'+(v.plateNumber||'-')+'</h3><p>編集中</p></div>'+form+imgEdit+actions;
 }
 
 function ea(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
@@ -378,6 +370,97 @@ function deleteVehicle(plate){
   .catch(function(err){showToast('通信エラー：'+err.message,true);});
 }
 
+// ============================================================
+// 画像セクション生成（公開/社内共通）
+// ============================================================
+function buildImageSection(title, images, type){
+  var inputId='imgUpload_'+type;
+  var statusId='imgStatus_'+type;
+  var html='<div class="images-section"><div class="images-title">'+title+(images&&images.length?' ('+images.length+'枚)':'')+'</div>';
+  if(images&&images.length>0){
+    html+='<div class="images-grid">';
+    images.forEach(function(img){
+      var url=typeof img==='string'?img:img.url;
+      var fid=typeof img==='object'?img.fileId:'';
+      html+='<div class="img-wrap"><img src="'+url+'" onclick="window.open(\''+url+'\',\'_blank\')" title="クリックで拡大">';
+      if(fid){html+='<button class="img-del-btn" onclick="event.stopPropagation();deleteImage(\''+fid+'\',\''+type+'\')">×</button>';}
+      html+='</div>';
+    });
+    html+='</div>';
+  }else{html+='<div class="no-images">画像なし</div>';}
+  html+='<div class="img-add-area"><button class="img-add-btn" onclick="document.getElementById(\''+inputId+'\').click()">＋ 画像を追加</button><input type="file" id="'+inputId+'" multiple accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="uploadImages(this.files,\''+type+'\')"><div id="'+statusId+'"></div></div></div>';
+  return html;
+}
+
+// ============================================================
+// 画像アップロード（type: 'public' or 'internal'）
+// ============================================================
+function uploadImages(files,type){
+  if(!currentVehicle||!files.length)return;
+  type=type||'public';
+  var status=document.getElementById('imgStatus_'+type);
+  status.textContent='アップロード中... ('+files.length+'枚)';
+
+  var images=[];
+  var loaded=0;
+  Array.from(files).forEach(function(file){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      images.push({name:file.name,base64:e.target.result});
+      loaded++;
+      if(loaded===files.length) sendUpload(images);
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function sendUpload(imgs){
+    fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({
+      action:'uploadImage',key:API_KEY,plate:currentVehicle.plateNumber,imageType:type,images:imgs
+    })})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.error){showToast(data.error,true);status.textContent='';}
+      else{
+        showToast(data.uploaded+'枚アップロードしました');
+        status.textContent='';
+        var arrKey=type==='internal'?'imagesInternal':'imagesPublic';
+        if(data.images){
+          if(!currentVehicle[arrKey])currentVehicle[arrKey]=[];
+          data.images.forEach(function(img){currentVehicle[arrKey].push(img);});
+        }
+        renderViewMode(currentVehicle);
+      }
+    })
+    .catch(function(err){showToast('通信エラー：'+err.message,true);status.textContent='';});
+  }
+  document.getElementById('imgUpload_'+type).value='';
+}
+
+// ============================================================
+// 画像削除
+// ============================================================
+function deleteImage(fileId,type){
+  if(!confirm('この画像を削除しますか？'))return;
+  fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({
+    action:'deleteImage',key:API_KEY,fileId:fileId
+  })})
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(data.error){showToast(data.error,true);}
+    else{
+      showToast('画像を削除しました');
+      var arrKey=(type==='internal')?'imagesInternal':'imagesPublic';
+      if(currentVehicle[arrKey]){
+        currentVehicle[arrKey]=currentVehicle[arrKey].filter(function(img){
+          return(typeof img==='object'?img.fileId:'')!==fileId;
+        });
+      }
+      renderViewMode(currentVehicle);
+    }
+  })
+  .catch(function(err){showToast('通信エラー：'+err.message,true);});
+}
+
 document.getElementById('backButton').addEventListener('click',function(){
   if(editMode&&!confirm('編集中の内容は破棄されます。戻りますか？'))return;
   document.getElementById('detailView').classList.add('hidden');document.getElementById('listView').classList.remove('hidden');
@@ -389,4 +472,3 @@ fetchData();
 </script>
 </body>
 </html>
-
