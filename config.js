@@ -4,7 +4,7 @@
  */
 var APP_CONFIG = {
   // GAS統合版のデプロイURL
-  GAS_URL: 'https://script.google.com/macros/s/AKfycbwCwRg_ekIrmbT-Oucz0PyDXax8_hvliA8w-NL4UNTByqK5i8lDOtjWDDsY3zwuYaWAaA/exec',
+  GAS_URL: 'https://script.google.com/macros/s/AKfycby7_ciZ-bUMTNB3JG6M7YOl2JIamfaiTnIkiWsxn0JYAYsKWWBKrJ4lxh4eE0kiIJts/exec',
 
   // APIキー（GAS側のCONFIG.API_KEY_EMPLOYEE / API_KEY_CLIENT と一致させる）
   API_KEY_EMPLOYEE: 'a997e291429bbf3553591f3e9541b9bf',
