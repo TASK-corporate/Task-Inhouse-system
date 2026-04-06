@@ -50,30 +50,8 @@
     .spinner { width:32px; height:32px; border:3px solid #e5e7eb; border-top-color:#111; border-radius:50%; animation:spin .7s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
   </style>
-
-  <!-- Firebase Auth Check -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    const firebaseConfig = {
-      apiKey: "AIzaSyDT6LEWn2MUHjRB_QoVApWi4k7M5kgkIEE",
-      authDomain: "task-system-login.firebaseapp.com",
-      projectId: "task-system-login",
-      storageBucket: "task-system-login.firebasestorage.app",
-      messagingSenderId: "148812118192",
-      appId: "1:148812118192:web:ecc481c04f034d89fda375"
-    };
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = 'login.html';
-      } else {
-        document.body.style.visibility = 'visible';
-      }
-    });
-  </script>
-  <style>body{visibility:hidden;}</style>
+  <script src="../config.js"></script>
+  <script src="../auth.js"></script>
 </head>
 <body>
 <div class="header">
@@ -182,14 +160,25 @@
   </div>
   <!-- 画像 -->
   <div class="form-section">
-    <div class="form-section-title">車両画像（最大20枚）</div>
+    <div class="form-section-title">公開画像（顧客にも表示・最大20枚）</div>
     <div class="form-section-body">
-      <div class="image-upload-area" id="dropZone">
+      <div class="image-upload-area" id="dropZonePublic">
         <div class="image-upload-text">タップまたはドラッグで画像を追加</div>
         <div class="image-upload-sub">JPG, PNG, GIF, WebP（各5MBまで）</div>
-        <input type="file" class="image-upload-input" id="imageInput" multiple accept="image/jpeg,image/png,image/gif,image/webp">
+        <input type="file" class="image-upload-input" id="imageInputPublic" multiple accept="image/jpeg,image/png,image/gif,image/webp">
       </div>
-      <div class="image-preview-grid" id="imagePreview"></div>
+      <div class="image-preview-grid" id="imagePreviewPublic"></div>
+    </div>
+  </div>
+  <div class="form-section">
+    <div class="form-section-title">社内画像（社内のみ表示・最大20枚）</div>
+    <div class="form-section-body">
+      <div class="image-upload-area" id="dropZoneInternal">
+        <div class="image-upload-text">タップまたはドラッグで画像を追加</div>
+        <div class="image-upload-sub">JPG, PNG, GIF, WebP（各5MBまで）</div>
+        <input type="file" class="image-upload-input" id="imageInputInternal" multiple accept="image/jpeg,image/png,image/gif,image/webp">
+      </div>
+      <div class="image-preview-grid" id="imagePreviewInternal"></div>
     </div>
   </div>
   <div class="submit-area">
@@ -199,32 +188,50 @@
 <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><div style="font-size:14px;color:#6b7280;">登録中...</div></div>
 <div class="toast" id="toast"></div>
 <script>
-var GAS_URL='https://script.google.com/macros/s/AKfycby7_ciZ-bUMTNB3JG6M7YOl2JIamfaiTnIkiWsxn0JYAYsKWWBKrJ4lxh4eE0kiIJts/exec';
-var API_KEY='task_employee_keiban.1000';
-var imageFiles = [];
+var GAS_URL = APP_CONFIG.GAS_URL;
+var API_KEY = APP_CONFIG.API_KEY_EMPLOYEE;
+var imageFilesPublic = [];
+var imageFilesInternal = [];
 
-var dropZone = document.getElementById('dropZone');
-var imageInput = document.getElementById('imageInput');
-dropZone.addEventListener('click', function() { imageInput.click(); });
-dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('dragover'); });
-dropZone.addEventListener('drop', function(e) { e.preventDefault(); dropZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
-imageInput.addEventListener('change', function() { handleFiles(this.files); this.value=''; });
+// 公開画像
+var dropZonePublic = document.getElementById('dropZonePublic');
+var imageInputPublic = document.getElementById('imageInputPublic');
+dropZonePublic.addEventListener('click', function() { imageInputPublic.click(); });
+dropZonePublic.addEventListener('dragover', function(e) { e.preventDefault(); dropZonePublic.classList.add('dragover'); });
+dropZonePublic.addEventListener('dragleave', function() { dropZonePublic.classList.remove('dragover'); });
+dropZonePublic.addEventListener('drop', function(e) { e.preventDefault(); dropZonePublic.classList.remove('dragover'); handleFiles(e.dataTransfer.files,'public'); });
+imageInputPublic.addEventListener('change', function() { handleFiles(this.files,'public'); this.value=''; });
 
-function handleFiles(files) {
-  var rem = 20 - imageFiles.length;
+// 社内画像
+var dropZoneInternal = document.getElementById('dropZoneInternal');
+var imageInputInternal = document.getElementById('imageInputInternal');
+dropZoneInternal.addEventListener('click', function() { imageInputInternal.click(); });
+dropZoneInternal.addEventListener('dragover', function(e) { e.preventDefault(); dropZoneInternal.classList.add('dragover'); });
+dropZoneInternal.addEventListener('dragleave', function() { dropZoneInternal.classList.remove('dragover'); });
+dropZoneInternal.addEventListener('drop', function(e) { e.preventDefault(); dropZoneInternal.classList.remove('dragover'); handleFiles(e.dataTransfer.files,'internal'); });
+imageInputInternal.addEventListener('change', function() { handleFiles(this.files,'internal'); this.value=''; });
+
+function handleFiles(files, type) {
+  var arr = type==='internal' ? imageFilesInternal : imageFilesPublic;
+  var rem = 20 - arr.length;
   if (rem <= 0) { showToast('画像は最大20枚までです',true); return; }
   Array.from(files).slice(0,rem).forEach(function(file) {
     if (file.size > 5*1024*1024) { showToast(file.name+' は5MBを超えています',true); return; }
     var r = new FileReader();
-    r.onload = function(e) { imageFiles.push({base64:e.target.result,name:file.name}); renderPreviews(); };
+    r.onload = function(e) { arr.push({base64:e.target.result,name:file.name}); renderPreviews(type); };
     r.readAsDataURL(file);
   });
 }
-function renderPreviews() {
-  document.getElementById('imagePreview').innerHTML = imageFiles.map(function(img,i) {
-    return '<div class="image-preview-item"><img src="'+img.base64+'" alt="'+img.name+'"><button class="image-preview-del" onclick="imageFiles.splice('+i+',1);renderPreviews()">×</button></div>';
+function renderPreviews(type) {
+  var arr = type==='internal' ? imageFilesInternal : imageFilesPublic;
+  var elId = type==='internal' ? 'imagePreviewInternal' : 'imagePreviewPublic';
+  document.getElementById(elId).innerHTML = arr.map(function(img,i) {
+    return '<div class="image-preview-item"><img src="'+img.base64+'" alt="'+img.name+'"><button class="image-preview-del" onclick="removeImg('+i+',\''+type+'\')">×</button></div>';
   }).join('');
+}
+function removeImg(idx, type) {
+  if (type==='internal') { imageFilesInternal.splice(idx,1); renderPreviews('internal'); }
+  else { imageFilesPublic.splice(idx,1); renderPreviews('public'); }
 }
 
 function submitForm() {
@@ -257,7 +264,8 @@ function submitForm() {
     smokeGlass: document.getElementById('fSmokeGlass').value,
     mileageInitial: document.getElementById('fMileageInitial').value.trim(),
     note: document.getElementById('fNote').value.trim(),
-    images: imageFiles.map(function(img) { return {name:img.name,base64:img.base64}; })
+    images: imageFilesPublic.map(function(img) { return {name:img.name,base64:img.base64}; }),
+    imagesInternal: imageFilesInternal.map(function(img) { return {name:img.name,base64:img.base64}; })
   };
 
   document.getElementById('submitBtn').disabled = true;
