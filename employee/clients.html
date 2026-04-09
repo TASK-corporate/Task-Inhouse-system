@@ -1,303 +1,1134 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>取引先管理 - 社用車管理システム</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;background:#f3f4f6;color:#111;min-height:100vh}
-    .header{background:#fff;padding:16px;border-bottom:1px solid #d1d5db;position:sticky;top:0;z-index:10}
-    .header-inner{max-width:960px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-    .back-link{display:flex;align-items:center;gap:5px;color:#6b7280;text-decoration:none;font-size:13px;cursor:pointer}
-    .back-link:hover{color:#000}
-    .back-link svg{width:15px;height:15px}
-    .header-sep{color:#d1d5db;font-size:13px}
-    .header h1{font-size:18px;font-weight:700;flex:1}
-    .header-btn{padding:8px 16px;background:#111;color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
-    .header-btn:hover{background:#333}
-    .header-btn svg{width:14px;height:14px}
-    .container{max-width:960px;margin:0 auto;padding:24px 16px 80px}
-    .search-bar{margin-bottom:16px}
-    .search-bar input{width:100%;padding:10px 14px;border:1.5px solid #d1d5db;font-size:14px;background:#fff}
-    .search-bar input:focus{outline:none;border-color:#111}
-    .count-bar{font-size:13px;color:#6b7280;margin-bottom:12px}
-    .client-list{display:flex;flex-direction:column;gap:8px}
-    .client-card{background:#fff;border:1px solid #e5e7eb;padding:16px 20px;cursor:pointer;transition:border-color .2s;display:flex;align-items:center;justify-content:space-between}
-    .client-card:hover{border-color:#111}
-    .cc-left{display:flex;align-items:center;gap:14px;min-width:0}
-    .cc-id{font-size:11px;color:#6b7280;font-weight:600;background:#f3f4f6;padding:2px 8px;border-radius:4px;flex-shrink:0}
-    .cc-name{font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .cc-meta{font-size:12px;color:#6b7280;margin-top:2px}
-    .cc-right{display:flex;align-items:center;gap:16px;flex-shrink:0}
-    .cc-count{font-size:22px;font-weight:800;color:#111}
-    .cc-count-label{font-size:11px;color:#6b7280}
-    .maint-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
-    .maint-on{background:#059669}.maint-off{background:#d1d5db}
-    .empty-state{text-align:center;color:#9ca3af;padding:60px 20px;font-size:14px}
-    .detail-view{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#f3f4f6;z-index:100;overflow-y:auto}
-    .detail-view.active{display:block}
-    .detail-container{max-width:960px;margin:0 auto;padding:0 16px 80px}
-    .detail-section{background:#fff;border:1px solid #e5e7eb;padding:20px;margin-bottom:12px}
-    .detail-section-title{font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid #111;padding-bottom:4px;margin-bottom:14px}
-    .detail-name{font-size:24px;font-weight:800;margin-bottom:4px}
-    .detail-id{font-size:12px;color:#6b7280;background:#f3f4f6;display:inline-block;padding:2px 10px;border-radius:4px;margin-bottom:16px}
-    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    @media(max-width:500px){.info-grid{grid-template-columns:1fr}}
-    .info-item{border-bottom:1px solid #e5e7eb;padding-bottom:8px}
-    .info-label{font-size:12px;color:#6b7280;margin-bottom:2px}
-    .info-value{font-size:14px;font-weight:600}
-    .v-table{width:100%;border-collapse:collapse;font-size:13px}
-    .v-table th{background:#111;color:#fff;padding:8px 10px;text-align:left;font-size:12px;font-weight:600}
-    .v-table td{padding:8px 10px;border-bottom:1px solid #e5e7eb}
-    .v-table tr:nth-child(even) td{background:#f9fafb}
-    .v-table .tr{text-align:right}
-    .driver-tags{display:flex;flex-wrap:wrap;gap:6px}
-    .driver-tag{font-size:12px;background:#e5e7eb;color:#374151;padding:3px 8px;border-radius:4px}
-    .inv-hist-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #e5e7eb}
-    .inv-hist-item:last-child{border-bottom:none}
-    .inv-month{font-size:14px;font-weight:600}
-    .inv-total{font-size:14px;font-weight:700}
-    .inv-open-btn{padding:6px 14px;background:#111;color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer}
-    .inv-open-btn:hover{background:#333}
-    .detail-actions{display:flex;gap:12px;margin-top:16px}
-    .action-btn{flex:1;padding:14px;font-size:14px;font-weight:700;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
-    .action-btn svg{width:16px;height:16px}
-    .btn-edit{background:#111;color:#fff}.btn-edit:hover{background:#333}
-    .btn-invoice{background:#1d4ed8;color:#fff}.btn-invoice:hover{background:#1e40af}
-    .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
-    .modal-overlay.active{display:flex}
-    .modal{background:#fff;width:100%;max-width:640px;margin:0 auto}
-    .modal-header{padding:20px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between}
-    .modal-header h2{font-size:18px;font-weight:700}
-    .modal-close{padding:8px;background:none;border:none;cursor:pointer;color:#6b7280}.modal-close:hover{color:#111}
-    .modal-body{padding:20px}
-    .modal-footer{padding:16px 20px;border-top:1px solid #e5e7eb;display:flex;gap:12px;justify-content:flex-end}
-    .form-row{display:flex;gap:12px;margin-bottom:14px}
-    @media(max-width:600px){.form-row{flex-direction:column}}
-    .fg{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
-    .fg label{font-size:12px;font-weight:600;color:#6b7280}.fg .req{color:#ef4444}
-    .fg input,.fg select,.fg textarea{padding:10px 12px;border:1.5px solid #d1d5db;font-size:14px;width:100%;background:#fff;font-family:inherit}
-    .fg textarea{resize:vertical;min-height:60px}
-    .fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:#111}
-    .fg .hint{font-size:11px;color:#9ca3af;margin-top:2px}
-    .modal-btn{padding:10px 24px;font-size:14px;font-weight:600;border:none;cursor:pointer}
-    .btn-primary{background:#111;color:#fff}.btn-primary:hover{background:#333}
-    .btn-secondary{background:#fff;color:#6b7280;border:1.5px solid #d1d5db}.btn-secondary:hover{border-color:#111;color:#111}
-    .btn-danger{background:#fff;color:#dc2626;border:1.5px solid #fecaca}.btn-danger:hover{background:#fee2e2}
-    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1e293b;color:#fff;padding:12px 24px;font-size:14px;font-weight:600;z-index:999;transition:transform .3s ease;pointer-events:none}
-    .toast.show{transform:translateX(-50%) translateY(0)}.toast.error{background:#dc2626}
-    .drive-folder-link{display:flex;align-items:center;gap:10px;padding:14px 16px;background:#f0f9ff;border:1.5px solid #bae6fd;color:#0369a1;text-decoration:none;font-size:14px;font-weight:600;transition:background .2s}
-    .drive-folder-link:hover{background:#e0f2fe}
-    .drive-folder-link svg{flex-shrink:0}
-    svg{width:24px;height:24px}
-  </style>
-  <script src="../config.js"></script>
-  <script src="../auth.js"></script>
-</head>
-<body>
-<div class="header" id="mainHeader"><div class="header-inner">
-  <a href="index.html" class="back-link" id="headerBack"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg><span id="headerBackLabel">車両一覧</span></a>
-  <span class="header-sep">/</span>
-  <h1 id="headerTitle">取引先管理</h1>
-  <button class="header-btn" id="addBtn" onclick="openModal('add')"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>新規登録</button>
-</div></div>
-
-<div id="listView" class="container">
-  <div class="search-bar"><input type="text" id="clientSearch" placeholder="会社名・取引先IDで検索..." oninput="filterClients()"></div>
-  <div class="count-bar" id="clientCount"></div>
-  <div class="client-list" id="clientList"><div class="empty-state">読み込み中...</div></div>
-</div>
-
-<div id="detailView" class="detail-view">
-  <div class="detail-container"><div id="detailContent"></div></div>
-</div>
-
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal">
-    <div class="modal-header"><h2 id="modalTitle">取引先を登録</h2><button class="modal-close" onclick="closeModal()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
-    <div class="modal-body">
-      <div class="form-row"><div class="fg"><label>取引先ID <span class="req">*</span></label><input type="text" id="mClientId" placeholder="例）C036"><div class="hint">新規登録時のみ入力</div></div><div class="fg"><label>会社名 <span class="req">*</span></label><input type="text" id="mCompanyName" placeholder="例）株式会社〇〇"></div></div>
-      <div class="form-row"><div class="fg"><label>担当者名</label><input type="text" id="mContactName"></div><div class="fg"><label>メンテナンスプラン</label><select id="mMaintPlan"><option value="非加入">非加入</option><option value="加入">加入</option></select></div></div>
-      <div class="form-row"><div class="fg"><label>郵便番号</label><input type="text" id="mZipCode" placeholder="例）571-0076"></div><div class="fg"><label>支払条件</label><input type="text" id="mPayTerms" placeholder="例）月末締め翌月払い"></div></div>
-      <div class="form-row"><div class="fg"><label>住所</label><input type="text" id="mAddress"></div></div>
-      <div class="form-row"><div class="fg"><label>ドライバー名</label><textarea id="mDrivers" placeholder="複数名は「・」で区切り"></textarea><div class="hint">請求書のドロップダウン候補に使われます</div></div></div>
-      <div class="form-row"><div class="fg"><label>備考</label><textarea id="mNote" placeholder="任意のメモ"></textarea></div></div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>取引先管理 - 社用車管理システム</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
+          Arial, sans-serif;
+        background: #f3f4f6;
+        color: #111;
+        min-height: 100vh;
+      }
+      .header {
+        background: #fff;
+        padding: 16px;
+        border-bottom: 1px solid #d1d5db;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+      .header-inner {
+        max-width: 960px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .back-link {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #6b7280;
+        text-decoration: none;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .back-link:hover {
+        color: #000;
+      }
+      .back-link svg {
+        width: 15px;
+        height: 15px;
+      }
+      .header-sep {
+        color: #d1d5db;
+        font-size: 13px;
+      }
+      .header h1 {
+        font-size: 18px;
+        font-weight: 700;
+        flex: 1;
+      }
+      .header-btn {
+        padding: 8px 16px;
+        background: #111;
+        color: #fff;
+        border: none;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .header-btn:hover {
+        background: #333;
+      }
+      .header-btn svg {
+        width: 14px;
+        height: 14px;
+      }
+      .container {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 24px 16px 80px;
+      }
+      .search-bar {
+        margin-bottom: 16px;
+      }
+      .search-bar input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid #d1d5db;
+        font-size: 14px;
+        background: #fff;
+      }
+      .search-bar input:focus {
+        outline: none;
+        border-color: #111;
+      }
+      .count-bar {
+        font-size: 13px;
+        color: #6b7280;
+        margin-bottom: 12px;
+      }
+      .client-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .client-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        padding: 16px 20px;
+        cursor: pointer;
+        transition: border-color 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .client-card:hover {
+        border-color: #111;
+      }
+      .cc-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+      }
+      .cc-id {
+        font-size: 11px;
+        color: #6b7280;
+        font-weight: 600;
+        background: #f3f4f6;
+        padding: 2px 8px;
+        border-radius: 4px;
+        flex-shrink: 0;
+      }
+      .cc-name {
+        font-size: 16px;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .cc-meta {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 2px;
+      }
+      .cc-right {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-shrink: 0;
+      }
+      .cc-count {
+        font-size: 22px;
+        font-weight: 800;
+        color: #111;
+      }
+      .cc-count-label {
+        font-size: 11px;
+        color: #6b7280;
+      }
+      .maint-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 4px;
+      }
+      .maint-on {
+        background: #059669;
+      }
+      .maint-off {
+        background: #d1d5db;
+      }
+      .empty-state {
+        text-align: center;
+        color: #9ca3af;
+        padding: 60px 20px;
+        font-size: 14px;
+      }
+      .detail-view {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #f3f4f6;
+        z-index: 100;
+        overflow-y: auto;
+      }
+      .detail-view.active {
+        display: block;
+      }
+      .detail-container {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 0 16px 80px;
+      }
+      .detail-section {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        padding: 20px;
+        margin-bottom: 12px;
+      }
+      .detail-section-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: #374151;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        border-bottom: 2px solid #111;
+        padding-bottom: 4px;
+        margin-bottom: 14px;
+      }
+      .detail-name {
+        font-size: 24px;
+        font-weight: 800;
+        margin-bottom: 4px;
+      }
+      .detail-id {
+        font-size: 12px;
+        color: #6b7280;
+        background: #f3f4f6;
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 4px;
+        margin-bottom: 16px;
+      }
+      .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 500px) {
+        .info-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .info-item {
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 8px;
+      }
+      .info-label {
+        font-size: 12px;
+        color: #6b7280;
+        margin-bottom: 2px;
+      }
+      .info-value {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .v-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      .v-table th {
+        background: #111;
+        color: #fff;
+        padding: 8px 10px;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .v-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      .v-table tr:nth-child(even) td {
+        background: #f9fafb;
+      }
+      .v-table .tr {
+        text-align: right;
+      }
+      .driver-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .driver-tag {
+        font-size: 12px;
+        background: #e5e7eb;
+        color: #374151;
+        padding: 3px 8px;
+        border-radius: 4px;
+      }
+      .inv-hist-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      .inv-hist-item:last-child {
+        border-bottom: none;
+      }
+      .inv-month {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .inv-total {
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .inv-open-btn {
+        padding: 6px 14px;
+        background: #111;
+        color: #fff;
+        border: none;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .inv-open-btn:hover {
+        background: #333;
+      }
+      .detail-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .action-btn {
+        flex: 1;
+        padding: 14px;
+        font-size: 14px;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .action-btn svg {
+        width: 16px;
+        height: 16px;
+      }
+      .btn-edit {
+        background: #111;
+        color: #fff;
+      }
+      .btn-edit:hover {
+        background: #333;
+      }
+      .btn-invoice {
+        background: #1d4ed8;
+        color: #fff;
+      }
+      .btn-invoice:hover {
+        background: #1e40af;
+      }
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 200;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 40px 16px;
+        overflow-y: auto;
+      }
+      .modal-overlay.active {
+        display: flex;
+      }
+      .modal {
+        background: #fff;
+        width: 100%;
+        max-width: 640px;
+        margin: 0 auto;
+      }
+      .modal-header {
+        padding: 20px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .modal-header h2 {
+        font-size: 18px;
+        font-weight: 700;
+      }
+      .modal-close {
+        padding: 8px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #6b7280;
+      }
+      .modal-close:hover {
+        color: #111;
+      }
+      .modal-body {
+        padding: 20px;
+      }
+      .modal-footer {
+        padding: 16px 20px;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+      }
+      .form-row {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      @media (max-width: 600px) {
+        .form-row {
+          flex-direction: column;
+        }
+      }
+      .fg {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        flex: 1;
+        min-width: 0;
+      }
+      .fg label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b7280;
+      }
+      .fg .req {
+        color: #ef4444;
+      }
+      .fg input,
+      .fg select,
+      .fg textarea {
+        padding: 10px 12px;
+        border: 1.5px solid #d1d5db;
+        font-size: 14px;
+        width: 100%;
+        background: #fff;
+        font-family: inherit;
+      }
+      .fg textarea {
+        resize: vertical;
+        min-height: 60px;
+      }
+      .fg input:focus,
+      .fg select:focus,
+      .fg textarea:focus {
+        outline: none;
+        border-color: #111;
+      }
+      .fg .hint {
+        font-size: 11px;
+        color: #9ca3af;
+        margin-top: 2px;
+      }
+      .modal-btn {
+        padding: 10px 24px;
+        font-size: 14px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+      }
+      .btn-primary {
+        background: #111;
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: #333;
+      }
+      .btn-secondary {
+        background: #fff;
+        color: #6b7280;
+        border: 1.5px solid #d1d5db;
+      }
+      .btn-secondary:hover {
+        border-color: #111;
+        color: #111;
+      }
+      .btn-danger {
+        background: #fff;
+        color: #dc2626;
+        border: 1.5px solid #fecaca;
+      }
+      .btn-danger:hover {
+        background: #fee2e2;
+      }
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(80px);
+        background: #1e293b;
+        color: #fff;
+        padding: 12px 24px;
+        font-size: 14px;
+        font-weight: 600;
+        z-index: 999;
+        transition: transform 0.3s ease;
+        pointer-events: none;
+      }
+      .toast.show {
+        transform: translateX(-50%) translateY(0);
+      }
+      .toast.error {
+        background: #dc2626;
+      }
+      .drive-folder-link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 16px;
+        background: #f0f9ff;
+        border: 1.5px solid #bae6fd;
+        color: #0369a1;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 600;
+        transition: background 0.2s;
+      }
+      .drive-folder-link:hover {
+        background: #e0f2fe;
+      }
+      .drive-folder-link svg {
+        flex-shrink: 0;
+      }
+      svg {
+        width: 24px;
+        height: 24px;
+      }
+    </style>
+    <script src="../config.js"></script>
+    <script src="../auth.js"></script>
+  </head>
+  <body>
+    <div class="header" id="mainHeader">
+      <div class="header-inner">
+        <a href="index.html" class="back-link" id="headerBack"
+          ><svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            /></svg
+          ><span id="headerBackLabel">車両一覧</span></a
+        >
+        <span class="header-sep">/</span>
+        <h1 id="headerTitle">取引先管理</h1>
+        <button class="header-btn" id="addBtn" onclick="openModal('add')">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            /></svg
+          >新規登録
+        </button>
+      </div>
     </div>
-    <div class="modal-footer" id="modalFooter"><button class="modal-btn btn-secondary" onclick="closeModal()">キャンセル</button><button class="modal-btn btn-primary" onclick="saveClient()">登録する</button></div>
-  </div>
-</div>
-<div class="toast" id="toast"></div>
 
-<script>
-var GAS_URL = APP_CONFIG.GAS_URL;
-var API_KEY = APP_CONFIG.API_KEY_EMPLOYEE;
-var clients=[];
-var modalMode='add';
-var editingClientId=null;
-var currentView='list';
+    <div id="listView" class="container">
+      <div class="search-bar">
+        <input
+          type="text"
+          id="clientSearch"
+          placeholder="会社名・取引先IDで検索..."
+          oninput="filterClients()"
+        />
+      </div>
+      <div class="count-bar" id="clientCount"></div>
+      <div class="client-list" id="clientList">
+        <div class="empty-state">読み込み中...</div>
+      </div>
+    </div>
 
-function loadClients(){
-  fetch(GAS_URL+'?action=clients&key='+API_KEY)
-  .then(function(r){return r.json();})
-  .then(function(data){if(Array.isArray(data)){clients=data;renderList();}else{document.getElementById('clientList').innerHTML='<div class="empty-state">データ取得失敗</div>';}})
-  .catch(function(){document.getElementById('clientList').innerHTML='<div class="empty-state">通信エラー</div>';});
-}
+    <div id="detailView" class="detail-view">
+      <div class="detail-container"><div id="detailContent"></div></div>
+    </div>
 
-function renderList(filter){
-  var el=document.getElementById('clientList');
-  var kw=(filter||'').trim().toLowerCase();
-  var filtered=clients.filter(function(c){if(!kw)return true;return(c.companyName||'').toLowerCase().indexOf(kw)!==-1||(c.clientId||'').toLowerCase().indexOf(kw)!==-1||(c.contactName||'').toLowerCase().indexOf(kw)!==-1;});
-  filtered.sort(function(a,b){return(b.vehicleCount||0)-(a.vehicleCount||0);});
-  document.getElementById('clientCount').textContent=kw?clients.length+'社中 '+filtered.length+'社を表示':'全'+clients.length+'社';
-  if(!filtered.length){el.innerHTML='<div class="empty-state">'+(kw?'「'+kw+'」に一致する取引先がありません':'取引先が登録されていません')+'</div>';return;}
-  el.innerHTML=filtered.map(function(c){
-    var cnt=c.vehicleCount||0;
-    return '<div class="client-card" onclick="showDetail(\''+c.clientId+'\')">'
-      +'<div class="cc-left"><span class="cc-id">'+c.clientId+'</span><div><div class="cc-name">'+c.companyName+'</div>'
-      +'<div class="cc-meta"><span class="maint-dot '+(c.maintPlan==='加入'?'maint-on':'maint-off')+'"></span>メンテ：'+(c.maintPlan||'非加入')+(c.contactName?' ／ 担当：'+c.contactName:'')+'</div></div></div>'
-      +'<div class="cc-right"><div style="text-align:center"><div class="cc-count">'+cnt+'</div><div class="cc-count-label">台</div></div>'
-      +'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#9ca3af"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div></div>';
-  }).join('');
-}
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 id="modalTitle">取引先を登録</h2>
+          <button class="modal-close" onclick="closeModal()">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="fg">
+              <label>取引先ID <span class="req">*</span></label
+              ><input type="text" id="mClientId" placeholder="例）C036" />
+              <div class="hint">新規登録時のみ入力</div>
+            </div>
+            <div class="fg">
+              <label>会社名 <span class="req">*</span></label
+              ><input
+                type="text"
+                id="mCompanyName"
+                placeholder="例）株式会社〇〇"
+              />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="fg">
+              <label>担当者名</label><input type="text" id="mContactName" />
+            </div>
+            <div class="fg">
+              <label>メンテナンスプラン</label
+              ><select id="mMaintPlan">
+                <option value="非加入">非加入</option>
+                <option value="加入">加入</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="fg">
+              <label>郵便番号</label
+              ><input type="text" id="mZipCode" placeholder="例）571-0076" />
+            </div>
+            <div class="fg">
+              <label>支払条件</label
+              ><input
+                type="text"
+                id="mPayTerms"
+                placeholder="例）月末締め翌月払い"
+              />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="fg">
+              <label>住所</label><input type="text" id="mAddress" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="fg">
+              <label>ドライバー名</label
+              ><textarea
+                id="mDrivers"
+                placeholder="複数名は「・」で区切り"
+              ></textarea>
+              <div class="hint">請求書のドロップダウン候補に使われます</div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="fg">
+              <label>備考</label
+              ><textarea id="mNote" placeholder="任意のメモ"></textarea>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="fg">
+              <label>種別</label>
+              <select id="mClientType"><option value="法人">法人</option><option value="個人">個人</option></select>
+              <div class="hint">請求書の敬称（御中/様）に反映</div>
+            </div>
+            <div class="fg">
+              <label>請求タイプ</label>
+              <select id="mBillingType"><option value="先払い">先払い</option><option value="後払い">後払い</option></select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" id="modalFooter">
+          <button class="modal-btn btn-secondary" onclick="closeModal()">
+            キャンセル</button
+          ><button class="modal-btn btn-primary" onclick="saveClient()">
+            登録する
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="toast" id="toast"></div>
 
-function filterClients(){renderList(document.getElementById('clientSearch').value);}
+    <script>
+      var GAS_URL = APP_CONFIG.GAS_URL;
+      var API_KEY = APP_CONFIG.API_KEY_EMPLOYEE;
+      var clients = [];
+      var modalMode = "add";
+      var editingClientId = null;
+      var currentView = "list";
 
-function showDetail(clientId){
-  currentView='detail';
-  document.getElementById('listView').style.display='none';
-  document.getElementById('detailView').classList.add('active');
-  document.getElementById('addBtn').style.display='none';
-  document.getElementById('headerTitle').textContent='取引先詳細';
-  document.getElementById('headerBackLabel').textContent='取引先一覧';
-  document.getElementById('headerBack').href='javascript:void(0)';
-  document.getElementById('headerBack').onclick=function(e){e.preventDefault();backToList();};
-  document.getElementById('detailContent').innerHTML='<div class="empty-state">読み込み中...</div>';
+      function loadClients() {
+        fetch(GAS_URL + "?action=clients&key=" + API_KEY)
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (data) {
+            if (Array.isArray(data)) {
+              clients = data;
+              renderList();
+            } else {
+              document.getElementById("clientList").innerHTML =
+                '<div class="empty-state">データ取得失敗</div>';
+            }
+          })
+          .catch(function () {
+            document.getElementById("clientList").innerHTML =
+              '<div class="empty-state">通信エラー</div>';
+          });
+      }
 
-  fetch(GAS_URL+'?action=clientDetail&clientId='+encodeURIComponent(clientId)+'&key='+API_KEY)
-  .then(function(r){return r.json();})
-  .then(function(data){if(data.error){document.getElementById('detailContent').innerHTML='<div class="empty-state">'+data.error+'</div>';return;}renderDetail(data);})
-  .catch(function(){document.getElementById('detailContent').innerHTML='<div class="empty-state">通信エラー</div>';});
-}
+      function renderList(filter) {
+        var el = document.getElementById("clientList");
+        var kw = (filter || "").trim().toLowerCase();
+        var filtered = clients.filter(function (c) {
+          if (!kw) return true;
+          return (
+            (c.companyName || "").toLowerCase().indexOf(kw) !== -1 ||
+            (c.clientId || "").toLowerCase().indexOf(kw) !== -1 ||
+            (c.contactName || "").toLowerCase().indexOf(kw) !== -1
+          );
+        });
+        filtered.sort(function (a, b) {
+          return (b.vehicleCount || 0) - (a.vehicleCount || 0);
+        });
+        document.getElementById("clientCount").textContent = kw
+          ? clients.length + "社中 " + filtered.length + "社を表示"
+          : "全" + clients.length + "社";
+        if (!filtered.length) {
+          el.innerHTML =
+            '<div class="empty-state">' +
+            (kw
+              ? "「" + kw + "」に一致する取引先がありません"
+              : "取引先が登録されていません") +
+            "</div>";
+          return;
+        }
+        el.innerHTML = filtered
+          .map(function (c) {
+            var cnt = c.vehicleCount || 0;
+            return (
+              '<div class="client-card" onclick="showDetail(\'' +
+              c.clientId +
+              "')\">" +
+              '<div class="cc-left"><span class="cc-id">' +
+              c.clientId +
+              '</span><div><div class="cc-name">' +
+              c.companyName +
+              "</div>" +
+              '<div class="cc-meta"><span class="maint-dot ' +
+              (c.maintPlan === "加入" ? "maint-on" : "maint-off") +
+              '"></span>メンテ：' +
+              (c.maintPlan || "非加入") +
+              (c.contactName ? " ／ 担当：" + c.contactName : "") +
+              "</div></div></div>" +
+              '<div class="cc-right"><div style="text-align:center"><div class="cc-count">' +
+              cnt +
+              '</div><div class="cc-count-label">台</div></div>' +
+              '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#9ca3af"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></div></div>'
+            );
+          })
+          .join("");
+      }
 
-function renderDetail(c){
-  var html='<div class="detail-section">'
-    +'<div class="detail-name">'+c.companyName+'</div><div class="detail-id">'+c.clientId+'</div>'
-    +'<div class="detail-section-title">基本情報</div><div class="info-grid">'
-    +ii('担当者',c.contactName)+ii('メンテナンスプラン',c.maintPlan)+ii('支払条件',c.payTerms)+ii('郵便番号',c.zipCode)+ii('住所',c.address)+ii('備考',c.note)
-    +'</div></div>';
+      function filterClients() {
+        renderList(document.getElementById("clientSearch").value);
+      }
 
-  var vc=c.vehicles||[];
-  html+='<div class="detail-section"><div class="detail-section-title">貸出中車両（'+vc.length+'台）</div>';
-  if(vc.length){
-    html+='<div style="overflow-x:auto"><table class="v-table"><thead><tr><th>ナンバー</th><th>車種</th><th>使用者</th><th>エリア</th><th>ステータス</th><th class="tr">料金</th><th>車検満了日</th></tr></thead><tbody>';
-    vc.forEach(function(v){html+='<tr><td style="font-weight:600">'+v.plateNumber+'</td><td>'+v.carModel+'</td><td>'+(v.user||'-')+'</td><td>'+(v.area||'-')+'</td><td>'+(v.status||'-')+'</td><td class="tr">'+(v.price?Number(v.price).toLocaleString()+'円':'-')+'</td><td>'+(v.inspection||'-')+'</td></tr>';});
-    html+='</tbody></table></div>';
-  }else{html+='<div class="empty-state" style="padding:20px">貸出中の車両はありません</div>';}
-  html+='</div>';
+      function showDetail(clientId) {
+        currentView = "detail";
+        document.getElementById("listView").style.display = "none";
+        document.getElementById("detailView").classList.add("active");
+        document.getElementById("addBtn").style.display = "none";
+        document.getElementById("headerTitle").textContent = "取引先詳細";
+        document.getElementById("headerBackLabel").textContent = "取引先一覧";
+        document.getElementById("headerBack").href = "javascript:void(0)";
+        document.getElementById("headerBack").onclick = function (e) {
+          e.preventDefault();
+          backToList();
+        };
+        document.getElementById("detailContent").innerHTML =
+          '<div class="empty-state">読み込み中...</div>';
 
-  var dr=c.drivers||[];
-  if(dr.length&&dr[0]){
-    html+='<div class="detail-section"><div class="detail-section-title">ドライバー（'+dr.length+'名）</div><div class="driver-tags">'+dr.map(function(d){return'<span class="driver-tag">'+d+'</span>';}).join('')+'</div></div>';
-  }
+        fetch(
+          GAS_URL +
+            "?action=clientDetail&clientId=" +
+            encodeURIComponent(clientId) +
+            "&key=" +
+            API_KEY,
+        )
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (data) {
+            if (data.error) {
+              document.getElementById("detailContent").innerHTML =
+                '<div class="empty-state">' + data.error + "</div>";
+              return;
+            }
+            renderDetail(data);
+          })
+          .catch(function () {
+            document.getElementById("detailContent").innerHTML =
+              '<div class="empty-state">通信エラー</div>';
+          });
+      }
 
-  var inv=c.invoiceHistory||[];
-  html+='<div class="detail-section"><div class="detail-section-title">請求書履歴'+(inv.length?' （'+inv.length+'件）':'')+'</div>';
-  if(inv.length){
-    inv.forEach(function(i){
-      var ym=i.yearMonth||'';var label=ym.length===6?(ym.substring(0,4)+'年'+parseInt(ym.substring(4))+'月'):ym;
-      html+='<div class="inv-hist-item"><div class="inv-month">'+label+'</div><div style="display:flex;align-items:center;gap:12px"><div class="inv-total">¥'+Number(i.total||0).toLocaleString()+'</div><button class="inv-open-btn" onclick="event.stopPropagation();location.href=\'invoice.html?client='+c.clientId+'&inv='+i.invoiceId+'\'">開く</button></div></div>';
-    });
-  }else{html+='<div class="empty-state" style="padding:20px">請求書はまだありません</div>';}
-  html+='</div>';
+      function renderDetail(c) {
+        var honorific = (c.clientType === '個人') ? '様' : '御中';
+        var html =
+          '<div class="detail-section">' +
+          '<div class="detail-name">' +
+          c.companyName + ' <span style="font-size:14px;font-weight:400;color:#6b7280">' + honorific + '</span>' +
+          '</div><div class="detail-id">' +
+          c.clientId +
+          "</div>" +
+          '<div class="detail-section-title">基本情報</div><div class="info-grid">' +
+          ii("担当者", c.contactName) +
+          ii("メンテナンスプラン", c.maintPlan) +
+          ii("種別", c.clientType || '法人') +
+          ii("請求タイプ", c.billingType || '先払い') +
+          ii("支払条件", c.payTerms) +
+          ii("郵便番号", c.zipCode) +
+          ii("住所", c.address) +
+          ii("備考", c.note) +
+          "</div></div>";
 
-  html+='<div class="detail-actions">'
-    +'<button class="action-btn btn-edit" onclick="openModal(\'edit\',\''+c.clientId+'\')"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>編集</button>'
-    +'<button class="action-btn btn-invoice" onclick="location.href=\'invoice.html?client='+c.clientId+'\'"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>請求書作成</button></div>';
+        var vc = c.vehicles || [];
+        html +=
+          '<div class="detail-section"><div class="detail-section-title">貸出中車両（' +
+          vc.length +
+          "台）</div>";
+        if (vc.length) {
+          html +=
+            '<div style="overflow-x:auto"><table class="v-table"><thead><tr><th>ナンバー</th><th>車種</th><th>使用者</th><th>エリア</th><th>ステータス</th><th class="tr">料金</th><th>車検満了日</th><th></th></tr></thead><tbody>';
+          vc.forEach(function (v) {
+            html +=
+              '<tr><td style="font-weight:600">' +
+              v.plateNumber +
+              "</td><td>" +
+              v.carModel +
+              "</td><td>" +
+              (v.user || "-") +
+              "</td><td>" +
+              (v.area || "-") +
+              "</td><td>" +
+              (v.status || "-") +
+              '</td><td class="tr">' +
+              (v.price ? Number(v.price).toLocaleString() + "円" : "-") +
+              "</td><td>" +
+              (v.inspection || "-") +
+              '</td><td><a href="modify.html?plate=' + encodeURIComponent(v.plateNumber) + '" style="color:#1d4ed8;font-size:12px;font-weight:600;text-decoration:none">編集</a></td></tr>';
+          });
+          html += "</tbody></table></div>";
+        } else {
+          html +=
+            '<div class="empty-state" style="padding:20px">貸出中の車両はありません</div>';
+        }
+        html += "</div>";
 
-  // 請求書PDFフォルダ
-  if(c.invoiceFolderId){
-    html+='<div class="detail-section"><div class="detail-section-title">請求書PDFフォルダ</div>'
-      +'<a href="https://drive.google.com/drive/folders/'+c.invoiceFolderId+'" target="_blank" class="drive-folder-link">'
-      +'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>'
-      +'Googleドライブで開く（PDFをアップロード・管理）</a></div>';
-  }
+        var dr = c.drivers || [];
+        if (dr.length && dr[0]) {
+          html +=
+            '<div class="detail-section"><div class="detail-section-title">ドライバー（' +
+            dr.length +
+            '名）</div><div class="driver-tags">' +
+            dr
+              .map(function (d) {
+                return '<span class="driver-tag">' + d + "</span>";
+              })
+              .join("") +
+            "</div></div>";
+        }
 
-  document.getElementById('detailContent').innerHTML=html;
-}
+        var inv = c.invoiceHistory || [];
+        html +=
+          '<div class="detail-section"><div class="detail-section-title">請求書履歴' +
+          (inv.length ? " （" + inv.length + "件）" : "") +
+          "</div>";
+        if (inv.length) {
+          inv.forEach(function (i) {
+            var ym = i.yearMonth || "";
+            var label =
+              ym.length === 6
+                ? ym.substring(0, 4) + "年" + parseInt(ym.substring(4)) + "月"
+                : ym;
+            html +=
+              '<div class="inv-hist-item"><div class="inv-month">' +
+              label +
+              '</div><div style="display:flex;align-items:center;gap:12px"><div class="inv-total">¥' +
+              Number(i.total || 0).toLocaleString() +
+              '</div><button class="inv-open-btn" onclick="event.stopPropagation();location.href=\'invoice.html?client=' +
+              c.clientId +
+              "&inv=" +
+              i.invoiceId +
+              "'\">開く</button></div></div>";
+          });
+        } else {
+          html +=
+            '<div class="empty-state" style="padding:20px">請求書はまだありません</div>';
+        }
+        html += "</div>";
 
-function ii(l,v){return'<div class="info-item"><div class="info-label">'+l+'</div><div class="info-value">'+(v||'-')+'</div></div>';}
+        html +=
+          '<div class="detail-actions">' +
+          "<button class=\"action-btn btn-edit\" onclick=\"openModal('edit','" +
+          c.clientId +
+          '\')"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>編集</button>' +
+          '<button class="action-btn btn-invoice" onclick="location.href=\'invoice.html?client=' +
+          c.clientId +
+          '\'"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>請求書作成</button></div>';
 
-function backToList(){
-  currentView='list';
-  document.getElementById('detailView').classList.remove('active');
-  document.getElementById('listView').style.display='';
-  document.getElementById('addBtn').style.display='';
-  document.getElementById('headerTitle').textContent='取引先管理';
-  document.getElementById('headerBackLabel').textContent='車両一覧';
-  document.getElementById('headerBack').href='index.html';
-  document.getElementById('headerBack').onclick=null;
-  loadClients();
-}
+        // 請求書PDFフォルダ
+        if (c.invoiceFolderId) {
+          html +=
+            '<div class="detail-section"><div class="detail-section-title">請求書PDFフォルダ</div>' +
+            '<a href="https://drive.google.com/drive/folders/' +
+            c.invoiceFolderId +
+            '" target="_blank" class="drive-folder-link">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>' +
+            "Googleドライブで開く（PDFをアップロード・管理）</a></div>";
+        }
 
-function openModal(mode,clientId){
-  modalMode=mode;editingClientId=clientId||null;
-  if(mode==='add'){
-    document.getElementById('modalTitle').textContent='取引先を登録';
-    document.getElementById('mClientId').value=genId();document.getElementById('mClientId').readOnly=false;
-    document.getElementById('mCompanyName').value='';document.getElementById('mContactName').value='';
-    document.getElementById('mMaintPlan').value='非加入';document.getElementById('mZipCode').value='';
-    document.getElementById('mPayTerms').value='月末締め翌月払い';document.getElementById('mAddress').value='';
-    document.getElementById('mDrivers').value='';document.getElementById('mNote').value='';
-    setFoot(false);
-  }else{
-    var c=clients.find(function(x){return x.clientId===clientId;});if(!c)return;
-    document.getElementById('modalTitle').textContent=c.companyName+' を編集';
-    document.getElementById('mClientId').value=c.clientId;document.getElementById('mClientId').readOnly=true;
-    document.getElementById('mCompanyName').value=c.companyName||'';document.getElementById('mContactName').value=c.contactName||'';
-    document.getElementById('mMaintPlan').value=c.maintPlan||'非加入';document.getElementById('mZipCode').value=c.zipCode||'';
-    document.getElementById('mPayTerms').value=c.payTerms||'';document.getElementById('mAddress').value=c.address||'';
-    document.getElementById('mDrivers').value=(c.drivers||[]).join('・');document.getElementById('mNote').value=c.note||'';
-    setFoot(true);
-  }
-  document.getElementById('modalOverlay').classList.add('active');
-}
-function setFoot(del){
-  var f=document.getElementById('modalFooter');
-  f.innerHTML=(del?'<button class="modal-btn btn-danger" onclick="deleteClient()">削除</button><div style="flex:1"></div>':'')
-    +'<button class="modal-btn btn-secondary" onclick="closeModal()">キャンセル</button>'
-    +'<button class="modal-btn btn-primary" onclick="saveClient()">'+(del?'更新する':'登録する')+'</button>';
-}
-function closeModal(){document.getElementById('modalOverlay').classList.remove('active');}
-function genId(){var m=0;clients.forEach(function(c){var x=(c.clientId||'').match(/C(\d+)/);if(x){var n=parseInt(x[1]);if(n>m)m=n;}});return'C'+String(m+1).padStart(3,'0');}
+        document.getElementById("detailContent").innerHTML = html;
+      }
 
-function saveClient(){
-  var cid=document.getElementById('mClientId').value.trim();var name=document.getElementById('mCompanyName').value.trim();
-  if(!cid){showToast('取引先IDを入力してください',true);return;}
-  if(!name){showToast('会社名を入力してください',true);return;}
-  var body={action:modalMode==='add'?'registerClient':'modifyClient',key:API_KEY,clientId:cid,companyName:name,
-    contactName:document.getElementById('mContactName').value.trim(),maintPlan:document.getElementById('mMaintPlan').value,
-    zipCode:document.getElementById('mZipCode').value.trim(),payTerms:document.getElementById('mPayTerms').value.trim(),
-    address:document.getElementById('mAddress').value.trim(),drivers:document.getElementById('mDrivers').value.trim(),
-    note:document.getElementById('mNote').value.trim()};
-  fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)})
-  .then(function(r){return r.json();})
-  .then(function(data){if(data.error){showToast(data.error,true);}else{showToast(modalMode==='add'?'登録しました':'更新しました');closeModal();if(currentView==='detail')showDetail(cid);else loadClients();}})
-  .catch(function(err){showToast('通信エラー：'+err.message,true);});
-}
+      function ii(l, v) {
+        return (
+          '<div class="info-item"><div class="info-label">' +
+          l +
+          '</div><div class="info-value">' +
+          (v || "-") +
+          "</div></div>"
+        );
+      }
 
-function deleteClient(){
-  if(!editingClientId)return;var c=clients.find(function(x){return x.clientId===editingClientId;});
-  if(!confirm('「'+(c?c.companyName:editingClientId)+'」を削除しますか？'))return;
-  fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'deleteClient',key:API_KEY,clientId:editingClientId})})
-  .then(function(r){return r.json();})
-  .then(function(data){if(data.error){showToast(data.error,true);}else{showToast('削除しました');closeModal();backToList();}})
-  .catch(function(err){showToast('通信エラー：'+err.message,true);});
-}
+      function backToList() {
+        currentView = "list";
+        document.getElementById("detailView").classList.remove("active");
+        document.getElementById("listView").style.display = "";
+        document.getElementById("addBtn").style.display = "";
+        document.getElementById("headerTitle").textContent = "取引先管理";
+        document.getElementById("headerBackLabel").textContent = "車両一覧";
+        document.getElementById("headerBack").href = "index.html";
+        document.getElementById("headerBack").onclick = null;
+        loadClients();
+      }
 
-function showToast(msg,e){var t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(e?' error':'');t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
+      function openModal(mode, clientId) {
+        modalMode = mode;
+        editingClientId = clientId || null;
+        if (mode === "add") {
+          document.getElementById("modalTitle").textContent = "取引先を登録";
+          document.getElementById("mClientId").value = genId();
+          document.getElementById("mClientId").readOnly = false;
+          document.getElementById("mCompanyName").value = "";
+          document.getElementById("mContactName").value = "";
+          document.getElementById("mMaintPlan").value = "非加入";
+          document.getElementById("mZipCode").value = "";
+          document.getElementById("mPayTerms").value = "月末締め翌月払い";
+          document.getElementById("mAddress").value = "";
+          document.getElementById("mDrivers").value = "";
+          document.getElementById("mNote").value = "";
+          document.getElementById("mClientType").value = "法人";
+          document.getElementById("mBillingType").value = "先払い";
+          setFoot(false);
+        } else {
+          var c = clients.find(function (x) {
+            return x.clientId === clientId;
+          });
+          if (!c) return;
+          document.getElementById("modalTitle").textContent =
+            c.companyName + " を編集";
+          document.getElementById("mClientId").value = c.clientId;
+          document.getElementById("mClientId").readOnly = true;
+          document.getElementById("mCompanyName").value = c.companyName || "";
+          document.getElementById("mContactName").value = c.contactName || "";
+          document.getElementById("mMaintPlan").value = c.maintPlan || "非加入";
+          document.getElementById("mZipCode").value = c.zipCode || "";
+          document.getElementById("mPayTerms").value = c.payTerms || "";
+          document.getElementById("mAddress").value = c.address || "";
+          document.getElementById("mDrivers").value = (c.drivers || []).join(
+            "・",
+          );
+          document.getElementById("mNote").value = c.note || "";
+          document.getElementById("mClientType").value = c.clientType || "法人";
+          document.getElementById("mBillingType").value = c.billingType || "先払い";
+          setFoot(true);
+        }
+        document.getElementById("modalOverlay").classList.add("active");
+      }
+      function setFoot(del) {
+        var f = document.getElementById("modalFooter");
+        f.innerHTML =
+          (del
+            ? '<button class="modal-btn btn-danger" onclick="deleteClient()">削除</button><div style="flex:1"></div>'
+            : "") +
+          '<button class="modal-btn btn-secondary" onclick="closeModal()">キャンセル</button>' +
+          '<button class="modal-btn btn-primary" onclick="saveClient()">' +
+          (del ? "更新する" : "登録する") +
+          "</button>";
+      }
+      function closeModal() {
+        document.getElementById("modalOverlay").classList.remove("active");
+      }
+      function genId() {
+        var m = 0;
+        clients.forEach(function (c) {
+          var x = (c.clientId || "").match(/C(\d+)/);
+          if (x) {
+            var n = parseInt(x[1]);
+            if (n > m) m = n;
+          }
+        });
+        return "C" + String(m + 1).padStart(3, "0");
+      }
 
-loadClients();
-</script>
-</body>
+      function saveClient() {
+        var cid = document.getElementById("mClientId").value.trim();
+        var name = document.getElementById("mCompanyName").value.trim();
+        if (!cid) {
+          showToast("取引先IDを入力してください", true);
+          return;
+        }
+        if (!name) {
+          showToast("会社名を入力してください", true);
+          return;
+        }
+        var body = {
+          action: modalMode === "add" ? "registerClient" : "modifyClient",
+          key: API_KEY,
+          clientId: cid,
+          companyName: name,
+          contactName: document.getElementById("mContactName").value.trim(),
+          maintPlan: document.getElementById("mMaintPlan").value,
+          zipCode: document.getElementById("mZipCode").value.trim(),
+          payTerms: document.getElementById("mPayTerms").value.trim(),
+          address: document.getElementById("mAddress").value.trim(),
+          drivers: document.getElementById("mDrivers").value.trim(),
+          note: document.getElementById("mNote").value.trim(),
+          clientType: document.getElementById("mClientType").value,
+          billingType: document.getElementById("mBillingType").value,
+        };
+        fetch(GAS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify(body),
+        })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (data) {
+            if (data.error) {
+              showToast(data.error, true);
+            } else {
+              showToast(modalMode === "add" ? "登録しました" : "更新しました");
+              closeModal();
+              if (currentView === "detail") showDetail(cid);
+              else loadClients();
+            }
+          })
+          .catch(function (err) {
+            showToast("通信エラー：" + err.message, true);
+          });
+      }
+
+      function deleteClient() {
+        if (!editingClientId) return;
+        var c = clients.find(function (x) {
+          return x.clientId === editingClientId;
+        });
+        if (
+          !confirm(
+            "「" + (c ? c.companyName : editingClientId) + "」を削除しますか？",
+          )
+        )
+          return;
+        fetch(GAS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({
+            action: "deleteClient",
+            key: API_KEY,
+            clientId: editingClientId,
+          }),
+        })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (data) {
+            if (data.error) {
+              showToast(data.error, true);
+            } else {
+              showToast("削除しました");
+              closeModal();
+              backToList();
+            }
+          })
+          .catch(function (err) {
+            showToast("通信エラー：" + err.message, true);
+          });
+      }
+
+      function showToast(msg, e) {
+        var t = document.getElementById("toast");
+        t.textContent = msg;
+        t.className = "toast" + (e ? " error" : "");
+        t.classList.add("show");
+        setTimeout(function () {
+          t.classList.remove("show");
+        }, 3000);
+      }
+
+      loadClients();
+    </script>
+  </body>
 </html>
