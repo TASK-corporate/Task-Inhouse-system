@@ -2,43 +2,45 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ログイン - 車両管理システム</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;background:#f3f4f6;display:flex;align-items:center;justify-content:center;min-height:100vh}
-    .card{background:#fff;padding:40px 32px;max-width:400px;width:100%;margin:16px;box-shadow:0 4px 12px rgba(0,0,0,.1);text-align:center}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Hiragino Sans','Helvetica Neue',Arial,sans-serif;background:#f3f4f6;display:flex;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;padding:16px}
+    .card{background:#fff;padding:40px 28px;max-width:400px;width:100%;box-shadow:0 4px 12px rgba(0,0,0,.08);text-align:center}
     .card h1{font-size:18px;font-weight:700;margin-bottom:8px}
     .card p{font-size:14px;color:#6b7280;margin-bottom:24px;line-height:1.6}
     .avatar{width:64px;height:64px;border-radius:50%;margin:0 auto 12px;background:#e5e7eb;overflow:hidden}
     .avatar img{width:100%;height:100%;object-fit:cover}
     .user-name{font-size:16px;font-weight:600;margin-bottom:4px}
     .user-id{font-size:11px;color:#9ca3af;margin-bottom:20px;word-break:break-all}
-    .btn{display:block;width:100%;padding:14px;font-size:15px;font-weight:700;border:none;cursor:pointer;margin-bottom:12px;transition:background .2s}
+    .btn{display:block;width:100%;padding:14px;font-size:15px;font-weight:700;border:none;cursor:pointer;margin-bottom:12px;transition:background .2s;-webkit-appearance:none;border-radius:0}
     .btn-line{background:#06C755;color:#fff}
-    .btn-line:hover{background:#05a648}
+    .btn-line:active{background:#05a648}
     .btn-primary{background:#111;color:#fff}
-    .btn-primary:hover{background:#333}
+    .btn-primary:active{background:#333}
     .btn-primary:disabled{background:#9ca3af;cursor:not-allowed}
     .btn-secondary{background:#fff;color:#6b7280;border:1.5px solid #d1d5db;padding:12px}
-    .btn-secondary:hover{border-color:#111;color:#111}
-    .status-msg{font-size:14px;padding:16px;margin-bottom:16px}
+    .btn-secondary:active{border-color:#111;color:#111}
+    .status-msg{font-size:14px;padding:16px;margin-bottom:16px;line-height:1.6}
     .status-pending{background:#fef3c7;color:#92400e}
     .status-error{background:#fee2e2;color:#991b1b}
     .spinner{width:32px;height:32px;border:3px solid #e5e7eb;border-top-color:#111;border-radius:50%;animation:spin .7s linear infinite;margin:20px auto}
     @keyframes spin{to{transform:rotate(360deg)}}
     .hidden{display:none}
-    .debug{font-size:10px;color:#d1d5db;margin-top:16px;word-break:break-all}
+    .debug{font-size:10px;color:#d1d5db;margin-top:16px;word-break:break-all;max-height:80px;overflow-y:auto}
     .form-group{text-align:left;margin-bottom:16px}
     .form-group label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px}
-    .form-group input{width:100%;padding:12px;border:1.5px solid #d1d5db;font-size:14px;background:#fff}
+    .form-group input{width:100%;padding:12px;border:1.5px solid #d1d5db;font-size:16px;background:#fff;-webkit-appearance:none;border-radius:0}
     .form-group input:focus{outline:none;border-color:#111}
     .form-group .hint{font-size:11px;color:#9ca3af;margin-top:4px}
     .divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:#9ca3af;font-size:13px}
     .divider::before,.divider::after{content:'';flex:1;height:1px;background:#e5e7eb}
-    .tab-switch{display:flex;gap:0;margin-bottom:24px;border:1.5px solid #d1d5db;overflow:hidden}
-    .tab-switch button{flex:1;padding:10px;font-size:14px;font-weight:600;background:#fff;color:#6b7280;border:none;cursor:pointer;transition:background .2s}
-    .tab-switch button.active{background:#111;color:#fff}
+    @media(max-width:380px){
+      .card{padding:32px 20px}
+      .card h1{font-size:16px}
+      .btn{padding:12px;font-size:14px}
+    }
   </style>
 </head>
 <body>
@@ -57,11 +59,11 @@
     <p>社員専用ページです</p>
     <div class="form-group">
       <label>ログインID</label>
-      <input type="text" id="pcLoginId" placeholder="ログインIDを入力" autocomplete="username">
+      <input type="text" id="pcLoginId" placeholder="ログインIDを入力" autocomplete="username" enterkeyhint="next">
     </div>
     <div class="form-group">
       <label>パスワード</label>
-      <input type="password" id="pcLoginPw" placeholder="パスワードを入力" autocomplete="current-password">
+      <input type="password" id="pcLoginPw" placeholder="パスワードを入力" autocomplete="current-password" enterkeyhint="done">
     </div>
     <div id="pcLoginError" class="status-msg status-error hidden"></div>
     <button class="btn btn-primary" id="pcLoginBtn" onclick="doPcLogin()">ログイン</button>
@@ -70,13 +72,6 @@
     <div style="margin-top:16px">
       <button class="btn btn-secondary" onclick="showState('statePcApply')">新規アカウント申請</button>
     </div>
-  </div>
-
-  <!-- LINEログインボタン（外部ブラウザでLIFF使う場合） -->
-  <div id="stateLogin" class="hidden">
-    <h1>車両管理システム</h1>
-    <p>社員専用ページです</p>
-    <button class="btn btn-line" onclick="doLiffLogin()">LINEでログイン</button>
   </div>
 
   <!-- LIFF申請画面（LINE経由） -->
@@ -133,21 +128,29 @@
   <div id="stateError" class="hidden">
     <h1>エラーが発生しました</h1>
     <div class="status-msg status-error" id="errorMsg">通信エラーが発生しました。</div>
-    <button class="btn btn-line" onclick="location.reload()">再試行</button>
+    <button class="btn btn-primary" onclick="location.reload()">再試行</button>
   </div>
 </div>
 
 <script src="../config.js"></script>
 <script>
 var currentUserId='',currentName='',currentPicture='';
-var allStates=['stateLoading','statePcLogin','stateLogin','stateApply','statePcApply','stateWaiting','stateError'];
+var allStates=['stateLoading','statePcLogin','stateApply','statePcApply','stateWaiting','stateError'];
 
 function showState(id){allStates.forEach(function(s){document.getElementById(s).classList.toggle('hidden',s!==id);});}
 function log(m){var el=document.getElementById('debugLog');if(el)el.textContent+=m+' → ';console.log('[login]',m);}
 function showError(m){showState('stateError');document.getElementById('errorMsg').textContent=m;}
 
+// パラメータ解析（LIFF liff.state対応）
+var params=new URLSearchParams(window.location.search);
+var liffState=params.get('liff.state');
+if(liffState){
+  var sp=new URLSearchParams(liffState.replace(/^\?/,''));
+  sp.forEach(function(v,k){if(!params.has(k))params.set(k,v);});
+}
+
 function getTargetPage(){
-  var pageMap={'index':'index.html','register':'register.html','modify':'modify.html','clients':'clients.html','invoice':'invoice.html'};
+  var pageMap={index:'index.html',register:'register.html',modify:'modify.html',clients:'clients.html',invoice:'invoice.html'};
   return pageMap[params.get('page')||'index']||'index.html';
 }
 
@@ -159,21 +162,17 @@ function showApply(userId,name,picture){
   if(picture)document.getElementById('applyAvatar').innerHTML='<img src="'+picture+'">';
 }
 
-// パラメータ解析（LIFF liff.state対応）
-var params=new URLSearchParams(window.location.search);
-var liffState=params.get('liff.state');
-if(liffState){var sp=new URLSearchParams(liffState.replace(/^\?/,''));sp.forEach(function(v,k){if(!params.has(k))params.set(k,v);});}
-var paramStatus=params.get('status');
-
 // ============================================================
 // 初期化：環境判定
 // ============================================================
+var paramStatus=params.get('status');
+
 if(paramStatus==='pending'&&params.get('userId')){
   showApply(params.get('userId'),params.get('name')||'','');
 }else if(paramStatus==='error'){
   showError('認証エラーが発生しました。');
 }else{
-  // sessionStorageにセッションがあれば即遷移
+  // sessionStorageチェック
   try{
     var ses=sessionStorage.getItem('AUTH_SESSION');
     if(ses){var s=JSON.parse(ses);if(s.loginTime&&(Date.now()-s.loginTime)<24*3600000){window.location.href=getTargetPage();}}
@@ -183,10 +182,7 @@ if(paramStatus==='pending'&&params.get('userId')){
   var script=document.createElement('script');
   script.src='https://static.line-scdn.net/liff/edge/2/sdk.js';
   script.onload=function(){log('SDK読込完了');startLiff();};
-  script.onerror=function(){
-    log('SDK読込失敗→PCモード');
-    showState('statePcLogin');
-  };
+  script.onerror=function(){log('SDK読込失敗→PCモード');showState('statePcLogin');};
   document.head.appendChild(script);
 }
 
@@ -195,24 +191,37 @@ if(paramStatus==='pending'&&params.get('userId')){
 // ============================================================
 function startLiff(){
   liff.init({liffId:APP_CONFIG.LIFF_ID}).then(function(){
-    log('LIFF初期化OK, loggedIn='+liff.isLoggedIn()+', inClient='+liff.isInClient());
-    if(!liff.isLoggedIn()){
-      if(liff.isInClient()){
+    var inClient=liff.isInClient();
+    var loggedIn=liff.isLoggedIn();
+    log('init OK, loggedIn='+loggedIn+', inClient='+inClient);
+
+    if(!loggedIn){
+      if(inClient){
+        // LINEブラウザ内 → 自動ログイン
+        log('LINEブラウザ内→自動login');
         liff.login({redirectUri:window.location.href});
       }else{
-        // 外部ブラウザ → PCログインフォーム表示
+        // 外部ブラウザ → PCログインフォーム
+        log('外部ブラウザ→PCモード');
         showState('statePcLogin');
       }
       return;
     }
+
+    // ログイン済み → プロフィール取得
     log('プロフィール取得中');
     liff.getProfile().then(function(profile){
-      log('取得OK: '+profile.displayName);
-      currentUserId=profile.userId;currentName=profile.displayName;currentPicture=profile.pictureUrl||'';
+      log('取得OK: '+profile.displayName+' / '+profile.userId);
+      currentUserId=profile.userId;
+      currentName=profile.displayName;
+      currentPicture=profile.pictureUrl||'';
       checkAuthAndRedirect(currentUserId);
-    }).catch(function(err){log('プロフィールエラー');showState('statePcLogin');});
+    }).catch(function(err){
+      log('プロフィールエラー: '+err.message);
+      showState('statePcLogin');
+    });
   }).catch(function(err){
-    log('LIFF初期化エラー→PCモード');
+    log('LIFF初期化エラー: '+(err.message||err));
     showState('statePcLogin');
   });
 }
@@ -224,13 +233,17 @@ function checkAuthAndRedirect(userId){
     .then(function(data){
       log('結果: '+JSON.stringify(data));
       if(data.authorized){
-        // セッション保存
-        sessionStorage.setItem('AUTH_SESSION',JSON.stringify({userId:userId,displayName:currentName,pictureUrl:currentPicture,loginTime:Date.now()}));
+        sessionStorage.setItem('AUTH_SESSION',JSON.stringify({
+          userId:userId,displayName:currentName,pictureUrl:currentPicture,loginTime:Date.now()
+        }));
         window.location.href=getTargetPage();
-      }else if(data.applied){showState('stateWaiting');}
-      else{showApply(currentUserId,currentName,currentPicture);}
+      }else if(data.applied){
+        showState('stateWaiting');
+      }else{
+        showApply(currentUserId,currentName,currentPicture);
+      }
     })
-    .catch(function(err){log('GASエラー');showError('サーバー通信エラー');});
+    .catch(function(err){log('GASエラー: '+err.message);showError('サーバー通信エラー');});
 }
 
 // ============================================================
@@ -247,7 +260,6 @@ function doPcLogin(){
   btn.disabled=true;btn.textContent='ログイン中...';
   document.getElementById('pcLoginError').classList.add('hidden');
 
-  // パスワードをSHA-256ハッシュ化してから送信
   hashPassword(loginPw).then(function(hashed){
     fetch(APP_CONFIG.GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({
       action:'checkAuthByPassword',key:APP_CONFIG.API_KEY_EMPLOYEE,loginId:loginId,passwordHash:hashed
@@ -256,7 +268,9 @@ function doPcLogin(){
     .then(function(data){
       btn.disabled=false;btn.textContent='ログイン';
       if(data.authorized){
-        sessionStorage.setItem('AUTH_SESSION',JSON.stringify({userId:data.userId||loginId,displayName:data.displayName||loginId,pictureUrl:'',loginTime:Date.now()}));
+        sessionStorage.setItem('AUTH_SESSION',JSON.stringify({
+          userId:data.userId||loginId,displayName:data.displayName||loginId,pictureUrl:'',loginTime:Date.now()
+        }));
         window.location.href=getTargetPage();
       }else{
         document.getElementById('pcLoginError').textContent=data.error||'IDまたはパスワードが正しくありません';
@@ -271,13 +285,18 @@ function doPcLogin(){
   });
 }
 
+// Enterキーでログイン
+document.addEventListener('DOMContentLoaded',function(){
+  var pwEl=document.getElementById('pcLoginPw');
+  if(pwEl)pwEl.addEventListener('keydown',function(e){if(e.key==='Enter')doPcLogin();});
+});
+
 // ============================================================
-// LIFF申請（LINE経由 + PC ID/PW設定）
+// LIFF申請（LINE経由）
 // ============================================================
 function submitApply(){
   var btn=document.getElementById('applyBtn');
   btn.disabled=true;btn.textContent='送信中...';
-
   var loginId=document.getElementById('applyLoginId').value.trim();
   var loginPw=document.getElementById('applyLoginPw').value;
 
@@ -290,13 +309,19 @@ function submitApply(){
     .then(function(r){return r.json();})
     .then(function(data){
       if(data.success){showState('stateWaiting');}
-      else{var res=document.getElementById('applyResult');res.className='status-msg status-error';res.textContent=data.error||'エラー';res.classList.remove('hidden');btn.disabled=false;btn.textContent='アクセスを申請する';}
+      else{
+        var res=document.getElementById('applyResult');
+        res.className='status-msg status-error';res.textContent=data.error||'エラー';
+        res.classList.remove('hidden');btn.disabled=false;btn.textContent='アクセスを申請する';
+      }
     })
-    .catch(function(err){btn.disabled=false;btn.textContent='アクセスを申請する';var res=document.getElementById('applyResult');res.className='status-msg status-error';res.textContent='通信エラー';res.classList.remove('hidden');});
+    .catch(function(){
+      btn.disabled=false;btn.textContent='アクセスを申請する';
+      var res=document.getElementById('applyResult');
+      res.className='status-msg status-error';res.textContent='通信エラー';res.classList.remove('hidden');
+    });
   }
-
-  if(loginPw){hashPassword(loginPw).then(doSubmit);}
-  else{doSubmit('');}
+  if(loginPw){hashPassword(loginPw).then(doSubmit);}else{doSubmit('');}
 }
 
 // ============================================================
@@ -307,20 +332,17 @@ function submitPcApply(){
   var loginId=document.getElementById('pcApplyLoginId').value.trim();
   var loginPw=document.getElementById('pcApplyLoginPw').value;
   var errEl=document.getElementById('pcApplyError');
-
   if(!name){errEl.textContent='表示名を入力してください';errEl.classList.remove('hidden');return;}
   if(!loginId){errEl.textContent='ログインIDを入力してください';errEl.classList.remove('hidden');return;}
   if(!loginPw||loginPw.length<4){errEl.textContent='パスワードを4文字以上で入力してください';errEl.classList.remove('hidden');return;}
   errEl.classList.add('hidden');
-
   var btn=document.getElementById('pcApplyBtn');
   btn.disabled=true;btn.textContent='送信中...';
 
   hashPassword(loginPw).then(function(hashed){
     fetch(APP_CONFIG.GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({
       action:'applyAccess',key:APP_CONFIG.API_KEY_EMPLOYEE,
-      userId:'',displayName:name,pictureUrl:'',
-      loginId:loginId,passwordHash:hashed
+      userId:'',displayName:name,pictureUrl:'',loginId:loginId,passwordHash:hashed
     })})
     .then(function(r){return r.json();})
     .then(function(data){
@@ -332,19 +354,18 @@ function submitPcApply(){
 }
 
 // ============================================================
-// LIFF login（PCブラウザからLINEログインする場合）
+// LINEログイン（PCブラウザから）
 // ============================================================
 function doLiffLogin(){
   if(typeof liff!=='undefined'&&liff.isReady){
     liff.login({redirectUri:window.location.href});
   }else{
-    // LIFFが読み込めていない場合はLIFF URLへ直接遷移
     window.location.href='https://liff.line.me/'+APP_CONFIG.LIFF_ID;
   }
 }
 
 // ============================================================
-// SHA-256 ハッシュ（Web Crypto API）
+// SHA-256 ハッシュ
 // ============================================================
 function hashPassword(pw){
   var encoder=new TextEncoder();
