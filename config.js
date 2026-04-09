@@ -11,7 +11,7 @@ var APP_CONFIG = {
   API_KEY_CLIENT:   'beccdd36ab6c29b2c1f8ef94834786bc',
 
   // LIFF ID（LINE Login用）
-  LIFF_ID: '2009586016-jVAW7J74',
+  LIFF_ID: '2009700999-epPrEzPg',
 
   // ログインページのパス（各ページからの相対パス）
   LOGIN_PATH: 'login.html',
