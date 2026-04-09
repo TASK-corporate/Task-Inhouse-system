@@ -84,7 +84,7 @@
     <div class="form-section-body">
       <div class="form-row">
         <div class="fg"><label>状態 <span class="req">*</span></label>
-          <select id="fStatus"><option value="">選択</option><option value="貸出中">貸出中</option><option value="販売可">販売可</option><option value="修理中">修理中</option><option value="要修理">要修理</option><option value="代車">代車</option><option value="廃車">廃車</option><option value="その他">その他</option></select>
+          <select id="fStatus"><option value="">選択</option><option value="貸出中">貸出中</option><option value="販売可">販売可</option><option value="販売済">販売済</option><option value="修理中">修理中</option><option value="要修理">要修理</option><option value="代車">代車</option><option value="事故廃車">事故廃車</option><option value="故障廃車">故障廃車</option><option value="その他">その他</option></select>
         </div>
         <div class="fg"><label>エリア <span class="req">*</span></label>
           <select id="fArea"><option value="">選択</option><option value="大阪">大阪</option><option value="名古屋">名古屋</option><option value="東京">東京</option></select>
@@ -97,7 +97,7 @@
         </div>
       </div>
       <div class="form-row">
-        <div class="fg"><label>貸出先</label><input type="text" id="fLoanDest" placeholder="会社名"></div>
+        <div class="fg"><label>貸出先</label><select id="fLoanDest"><option value="">選択</option></select></div>
         <div class="fg"><label>使用者</label><input type="text" id="fUser" placeholder="ドライバー名"></div>
       </div>
     </div>
@@ -193,6 +193,19 @@ var API_KEY = APP_CONFIG.API_KEY_EMPLOYEE;
 var imageFilesPublic = [];
 var imageFilesInternal = [];
 
+// 取引先リストを貸出先ドロップダウンに読み込み
+(function(){
+  fetch(GAS_URL+'?action=clients&key='+API_KEY)
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(!Array.isArray(data))return;
+      var sel=document.getElementById('fLoanDest');
+      data.forEach(function(c){
+        sel.innerHTML+='<option value="'+c.companyName+'">'+c.companyName+'</option>';
+      });
+    }).catch(function(){});
+})();
+
 // 公開画像
 var dropZonePublic = document.getElementById('dropZonePublic');
 var imageInputPublic = document.getElementById('imageInputPublic');
@@ -211,15 +224,30 @@ dropZoneInternal.addEventListener('dragleave', function() { dropZoneInternal.cla
 dropZoneInternal.addEventListener('drop', function(e) { e.preventDefault(); dropZoneInternal.classList.remove('dragover'); handleFiles(e.dataTransfer.files,'internal'); });
 imageInputInternal.addEventListener('change', function() { handleFiles(this.files,'internal'); this.value=''; });
 
+// 画像圧縮（最大800px、JPEG品質60%→高速化）
+function compressImage(file,callback){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var MAX=800,w=img.width,h=img.height;
+      if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+      var c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      callback({name:file.name.replace(/\.\w+$/,'.jpg'),base64:c.toDataURL('image/jpeg',0.6)});
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 function handleFiles(files, type) {
   var arr = type==='internal' ? imageFilesInternal : imageFilesPublic;
   var rem = 20 - arr.length;
   if (rem <= 0) { showToast('画像は最大20枚までです',true); return; }
   Array.from(files).slice(0,rem).forEach(function(file) {
     if (file.size > 5*1024*1024) { showToast(file.name+' は5MBを超えています',true); return; }
-    var r = new FileReader();
-    r.onload = function(e) { arr.push({base64:e.target.result,name:file.name}); renderPreviews(type); };
-    r.readAsDataURL(file);
+    compressImage(file, function(result) { arr.push(result); renderPreviews(type); });
   });
 }
 function renderPreviews(type) {
