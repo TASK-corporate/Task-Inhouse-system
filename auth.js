@@ -3,90 +3,120 @@
  * config.js の後に読み込むこと
  *
  * 認証方式:
- *   1. sessionStorage にセッションがあれば即表示（PC用）
- *   2. LIFFでログイン済みならGASで照合（LINE用）
+ *   1. sessionStorage にセッションがあれば即表示（24時間有効）
+ *   2. LIFF SDKでLINE UserIDを取得 → GASで照合
  *   3. どちらもなければ login.html にリダイレクト
  *
  * グローバル変数:
- *   window.AUTH_USER = { userId, displayName, pictureUrl } （認証成功時）
+ *   window.AUTH_USER = { userId, displayName, pictureUrl }（認証成功時）
  */
-
-(function() {
+(function () {
+  // ページを非表示にしておく（認証完了まで）
   var hideStyle = document.createElement('style');
-  hideStyle.textContent = 'body{visibility:hidden !important;}';
-  document.head.appendChild(hideStyle);
+  hideStyle.textContent = 'body{visibility:hidden !important;opacity:0 !important;}';
+  (document.head || document.documentElement).appendChild(hideStyle);
 
   function showPage() {
     hideStyle.textContent = '';
-    if (document.body) document.body.style.visibility = 'visible';
+    if (document.body) {
+      document.body.style.visibility = 'visible';
+      document.body.style.opacity = '1';
+    }
   }
 
   function goLogin(params) {
-    window.location.href = APP_CONFIG.LOGIN_PATH + (params || '');
+    var loginPath = (APP_CONFIG && APP_CONFIG.LOGIN_PATH) || 'login.html';
+    window.location.href = loginPath + (params || '');
   }
 
-  // ① sessionStorageチェック（PC用）
+  // ① sessionStorageチェック
   try {
     var session = sessionStorage.getItem('AUTH_SESSION');
     if (session) {
       var s = JSON.parse(session);
-      // 24時間以内のセッションなら有効
       if (s.loginTime && (Date.now() - s.loginTime) < 24 * 60 * 60 * 1000) {
-        window.AUTH_USER = { userId: s.userId, displayName: s.displayName, pictureUrl: s.pictureUrl || '' };
+        window.AUTH_USER = {
+          userId: s.userId,
+          displayName: s.displayName,
+          pictureUrl: s.pictureUrl || ''
+        };
         showPage();
-        return; // 認証完了、以降の処理は不要
+        return;
       } else {
         sessionStorage.removeItem('AUTH_SESSION');
       }
     }
-  } catch(e) {}
+  } catch (e) { }
 
-  // ② LIFF認証（LINEブラウザ用）
+  // ② LIFF SDK読み込み → 認証
   function loadLiff(cb) {
     if (typeof liff !== 'undefined') { cb(); return; }
     var s = document.createElement('script');
     s.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js';
-    s.onload = cb;
-    s.onerror = function() {
-      // LIFFが読み込めない場合はPC環境 → login.htmlへ
+    s.onload = function () { cb(); };
+    s.onerror = function () {
+      // LIFF SDKが読み込めない → PC環境 → login.htmlへ
       goLogin('');
     };
-    document.head.appendChild(s);
+    (document.head || document.documentElement).appendChild(s);
   }
 
-  loadLiff(function() {
-    liff.init({ liffId: APP_CONFIG.LIFF_ID }).then(function() {
-      if (!liff.isLoggedIn()) {
-        // LINEブラウザ内ならLIFFログイン、外部ブラウザならlogin.htmlへ
-        if (liff.isInClient()) {
-          liff.login({ redirectUri: window.location.href });
-        } else {
-          goLogin('');
-        }
-        return;
-      }
+  loadLiff(function () {
+    liff.init({ liffId: APP_CONFIG.LIFF_ID })
+      .then(function () {
+        // LINEブラウザ内かどうか判定
+        var inClient = liff.isInClient();
+        var loggedIn = liff.isLoggedIn();
 
-      liff.getProfile().then(function(profile) {
-        fetch(APP_CONFIG.GAS_URL + '?action=checkAuth&userId=' + encodeURIComponent(profile.userId) + '&key=' + APP_CONFIG.API_KEY_EMPLOYEE)
-          .then(function(r) { return r.json(); })
-          .then(function(data) {
-            if (data.authorized) {
-              window.AUTH_USER = {
-                userId: profile.userId,
-                displayName: profile.displayName,
-                pictureUrl: profile.pictureUrl || '',
-              };
-              showPage();
-            } else {
-              goLogin('?status=pending&userId=' + encodeURIComponent(profile.userId) + '&name=' + encodeURIComponent(profile.displayName));
-            }
+        if (!loggedIn) {
+          if (inClient) {
+            // LINEブラウザ内 → 自動ログイン（リダイレクトして戻ってくる）
+            liff.login({ redirectUri: window.location.href });
+          } else {
+            // 外部ブラウザ → login.htmlのID/PWフォームへ
+            goLogin('');
+          }
+          return;
+        }
+
+        // ログイン済み → プロフィール取得 → GAS照合
+        liff.getProfile()
+          .then(function (profile) {
+            var userId = profile.userId;
+            var url = APP_CONFIG.GAS_URL
+              + '?action=checkAuth&userId=' + encodeURIComponent(userId)
+              + '&key=' + APP_CONFIG.API_KEY_EMPLOYEE;
+
+            fetch(url)
+              .then(function (r) { return r.json(); })
+              .then(function (data) {
+                if (data.authorized) {
+                  // セッション保存 → ページ表示
+                  window.AUTH_USER = {
+                    userId: userId,
+                    displayName: profile.displayName,
+                    pictureUrl: profile.pictureUrl || ''
+                  };
+                  sessionStorage.setItem('AUTH_SESSION', JSON.stringify({
+                    userId: userId,
+                    displayName: profile.displayName,
+                    pictureUrl: profile.pictureUrl || '',
+                    loginTime: Date.now()
+                  }));
+                  showPage();
+                } else {
+                  // 未承認 → login.htmlの申請画面へ
+                  goLogin('?status=pending&userId=' + encodeURIComponent(userId)
+                    + '&name=' + encodeURIComponent(profile.displayName));
+                }
+              })
+              .catch(function () { goLogin('?status=error'); });
           })
-          .catch(function() { goLogin('?status=error'); });
-      }).catch(function() { goLogin('?status=error'); });
-    }).catch(function(err) {
-      console.error('LIFF初期化エラー:', err);
-      // LIFFが使えない環境 → login.htmlへ
-      goLogin('');
-    });
+          .catch(function () { goLogin('?status=error'); });
+      })
+      .catch(function () {
+        // LIFF初期化失敗 → login.htmlへ
+        goLogin('');
+      });
   });
 })();
