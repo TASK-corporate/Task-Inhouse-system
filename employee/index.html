@@ -23,7 +23,7 @@
       }
       .header {
         background: #fff;
-        padding: 16px;
+        padding: 10px 16px;
         border-bottom: 1px solid #d1d5db;
         position: sticky;
         top: 0;
@@ -34,52 +34,52 @@
         align-items: center;
         justify-content: space-between;
         flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 12px;
+        gap: 6px;
+        margin-bottom: 8px;
       }
       .header h1 {
-        font-size: 20px;
+        font-size: 18px;
         font-weight: bold;
       }
       .header p {
-        font-size: 14px;
+        font-size: 12px;
         color: #6b7280;
-        margin-top: 2px;
+        margin-top: 1px;
       }
       .nav-links {
         display: flex;
-        gap: 8px;
+        gap: 4px;
         flex-wrap: wrap;
       }
       .nav-link {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 8px 14px;
+        gap: 4px;
+        padding: 6px 10px;
         background: #000;
         color: #fff;
         text-decoration: none;
-        font-size: 13px;
+        font-size: 11px;
         font-weight: 600;
       }
       .nav-link:hover {
         background: #333;
       }
       .nav-link svg {
-        width: 14px;
-        height: 14px;
+        width: 12px;
+        height: 12px;
       }
       .search-area {
-        margin-bottom: 12px;
+        margin-bottom: 0;
       }
       .keyword-row {
         display: flex;
         gap: 8px;
-        margin-bottom: 10px;
+        margin-bottom: 0;
       }
       .keyword-input {
         flex: 1;
-        padding: 9px 12px;
+        padding: 8px 12px;
         border: 1.5px solid #d1d5db;
         font-size: 14px;
         background: #fff;
@@ -88,11 +88,33 @@
         outline: none;
         border-color: #000;
       }
-      .filter-area {
+      .filter-toggle {
         display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 0;
+        font-size: 12px;
+        color: #6b7280;
+        cursor: pointer;
+        border: none;
+        background: none;
+      }
+      .filter-toggle svg {
+        width: 14px;
+        height: 14px;
+        transition: transform .2s;
+      }
+      .filter-toggle.open svg {
+        transform: rotate(180deg);
+      }
+      .filter-area {
+        display: none;
         flex-wrap: wrap;
         gap: 8px;
         align-items: flex-end;
+      }
+      .filter-area.open {
+        display: flex;
       }
       .filter-group {
         display: flex;
@@ -605,7 +627,8 @@
               oninput="applyFilters()"
             />
           </div>
-          <div class="filter-area">
+          <button class="filter-toggle" id="filterToggle" onclick="var fa=document.getElementById('filterAreaWrap');var t=this;fa.classList.toggle('open');t.classList.toggle('open');"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6"/></svg>絞り込み</button>
+          <div class="filter-area" id="filterAreaWrap">
             <div class="filter-group">
               <label>状態</label
               ><select id="filterStatus" onchange="applyFilters()">
