@@ -85,6 +85,7 @@
     .li-header span { font-size:10px; font-weight:700; color:var(--g4); text-transform:uppercase; letter-spacing:.04em; }
     .li-area { margin-bottom:8px; }
     .li-row { display:grid; grid-template-columns:60px 1fr 50px 80px 1fr 34px; gap:4px; align-items:start; margin-bottom:6px; background:#f9fafb; border:1px solid var(--g2); border-radius:6px; padding:8px; }
+    .li-row.has-area { grid-template-columns:60px 70px 1fr 50px 80px 1fr 34px; }
     .li-row input, .li-row select { padding:8px 6px; border:1.5px solid var(--g3); font-size:13px; width:100%; border-radius:4px; -webkit-appearance:none; background:var(--white); }
     .li-row input:focus, .li-row select:focus { outline:none; border-color:var(--black); }
     .li-row input.tr { text-align:right; }
@@ -319,6 +320,7 @@ var vehicleCache  = [];      // 車両データ
 var vehicleLoaded = false;
 var lineItems     = [];
 var liId          = 0;
+var showAreaColumn = false;   // 後払い取引先→区分欄表示
 
 var PRESETS = [
   { v:'車両代', l:'車両代', p:0 },
@@ -425,6 +427,14 @@ function onClientChange() {
     setTxt('pvPartner', client.companyName);
     var hon = document.getElementById('pvHonorific');
     if (hon) hon.textContent = (client.clientType === '個人') ? '様' : '御中';
+    // 後払い取引先→区分欄表示
+    showAreaColumn = (client.billingType === '後払い');
+    // 既存の明細行の区分欄表示を切替
+    document.querySelectorAll('.li-row').forEach(function(row) {
+      row.classList.toggle('has-area', showAreaColumn);
+      var areaInput = row.querySelector('.li-area');
+      if (areaInput) areaInput.style.display = showAreaColumn ? '' : 'none';
+    });
     // 先払い/後払いの集計期間をデフォルト設定
     setBillingDefaults(client);
   }
@@ -509,12 +519,14 @@ function loadInvoice(invoiceId) {
       lineItems = [];
       document.getElementById('liArea').innerHTML = '';
       liId = 0;
+      // area情報があればshowAreaColumnをON
+      var hasArea = data.lines && data.lines.some(function(l) { return l.area && l.area.trim(); });
+      if (hasArea) showAreaColumn = true;
       if (data.lines && data.lines.length) {
         data.lines.forEach(function(line) {
-          // 月日を M/D 形式に正規化
           var normalizedDate = fmtShortDate(line.date);
           if (normalizedDate === '―') normalizedDate = '';
-          addLineItem(normalizedDate, line.itemType, line.itemText, line.qty, line.price, line.memo);
+          addLineItem(normalizedDate, line.itemType, line.itemText, line.qty, line.price, line.memo, line.area);
         });
       } else { addLineItem(); }
       updatePreview();
@@ -582,7 +594,7 @@ function copyLastMonth() {
               var dm = dateStr.match(/^(\d{1,2})\/(\d{1,2})$/);
               if (dm) { dateStr = currentMonth + '/' + dm[2]; }
             }
-            addLineItem(dateStr, line.itemType, line.itemText, line.qty, line.price, line.memo);
+            addLineItem(dateStr, line.itemType, line.itemText, line.qty, line.price, line.memo, line.area);
           });
         } else { addLineItem(); }
         updatePreview();
@@ -627,7 +639,8 @@ function saveToSheet() {
         itemText: label,
         qty:      item.qty   || 1,
         price:    item.price || 0,
-        memo:     item.memo  || ''
+        memo:     item.memo  || '',
+        area:     item.area  || ''
       };
     })
   };
@@ -674,12 +687,13 @@ function addLineItem(dateVal, ctType, ctText, qty, price, memo, area) {
   }).join('');
 
   var row = document.createElement('div');
-  row.className = 'li-row';
+  row.className = 'li-row' + (showAreaColumn ? ' has-area' : '');
   row.id = 'li_' + id;
   var sugId = 'sug_' + id;
 
   row.innerHTML =
     '<input type="text" placeholder="4/1" id="liDate_' + id + '" value="' + eA(dateVal||'') + '" style="font-size:12px;">' +
+    '<input type="text" placeholder="区分" class="li-area" id="liArea_' + id + '" value="' + eA(area||'') + '" style="font-size:12px;' + (showAreaColumn ? '' : 'display:none;') + '">' +
     '<div class="li-content-wrap">' +
       '<select id="liType_' + id + '">' + opts + '</select>' +
       '<div class="suggest-wrap" id="liSugWrap_' + id + '" style="' + (ct==='custom' ? '' : 'display:none;') + '">' +
@@ -695,6 +709,7 @@ function addLineItem(dateVal, ctType, ctText, qty, price, memo, area) {
   document.getElementById('liArea').appendChild(row);
 
   document.getElementById('liDate_'+id).addEventListener('input', function() { upLI(id,'date',this.value); });
+  document.getElementById('liArea_'+id).addEventListener('input', function() { upLI(id,'area',this.value); });
   document.getElementById('liType_'+id).addEventListener('change', function() { onTypeChange(id,this.value); });
   document.getElementById('liDesc_'+id).addEventListener('input', function() { onDescInput(id,this); });
   document.getElementById('liQty_'+id).addEventListener('input', function() { upLI(id,'qty',this.value); });
@@ -764,11 +779,10 @@ function onDescInput(id, input) {
       if (pr) pr.value = priceVal;
       upLI(id,'ctText',this.getAttribute('data-plate'));
       upLI(id,'price',priceVal);
-      // area と monthlyCap を設定
+      // monthlyCap を設定（区分areaは手入力なのでサジェストからセットしない）
       var item = lineItems.find(function(i){return i.id===id;});
       if(item){
-        item.area = this.getAttribute('data-area')||'';
-        item.monthlyCap = priceVal; // 月額料金をキャップとして保持
+        item.monthlyCap = priceVal;
       }
       dd.classList.remove('open');
     });
@@ -782,6 +796,7 @@ function upLI(id, field, value) {
   if (field==='qty') item.qty = parseInt(value)||1;
   if (field==='price') item.price = parseInt(value)||0;
   if (field==='date') item.date = value;
+  if (field==='area') item.area = value;
   if (field==='ctText') item.ctText = value;
   if (field==='memo') item.memo = value;
 
