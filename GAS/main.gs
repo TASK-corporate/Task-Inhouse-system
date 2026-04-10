@@ -12,7 +12,7 @@
 //  設定
 // =====================================================
 const CONFIG = {
-  SPREADSHEET_ID: '1wAfgpOuhMXWciuxr7aKCEHtI6qNbFbRE2CSzytFMr4M',
+  SPREADSHEET_ID: '1fojZ_b2AOqf5UAuWLAcbEUwbOOdgijwNbNpuJsM8kik',
   SHEET: {
     MASTER:          'マスターデータ',
     MODIFY_LOG:      '修正シート',
@@ -22,14 +22,15 @@ const CONFIG = {
   },
   API_KEY_EMPLOYEE: 'a997e291429bbf3553591f3e9541b9bf',
   API_KEY_CLIENT:   'beccdd36ab6c29b2c1f8ef94834786bc',
-  WEBHOOK_URL:      'https://hook.eu2.make.com/my8kvc5qb6n56of4denemgr9q5r8rpb1',
-  PARENT_FOLDER_ID: '1I7HEtBykOviIb5iVXBc4sh66YdKlIoFj',
-  INVOICE_PARENT_FOLDER_ID: '__INVOICE_FOLDER_ID__',  // ★要設定：Driveに作成した請求書用親フォルダID
+  WEBHOOK_URL:      'https://hook.eu1.make.com/g8ie6ui66mwo417jhr58njv9fmodjnpp',
+  PARENT_FOLDER_ID: '14qLifDTvX9TD_2Ev77Mq3ImXwgOIqsxT',
+  INVOICE_PARENT_FOLDER_ID: '1pkvBcx_QwYejbyVRy_5OohCwATVIU66N',  // ★要設定：Driveに作成した請求書用親フォルダID
   NOTIFICATION_DAYS: {
     VEHICLE_INSPECTION: [60, 30, 21],
     OIL_CHANGE:         [7, 0],
   },
 };
+
 
 // マスターデータのヘッダー名
 const COL = {
@@ -484,7 +485,7 @@ function _getClientDetail(clientId) {
     }
     invoiceHistory = Object.keys(map).map(function(k) {
       var inv = map[k];
-      inv.total = inv.subtotal + Math.floor(inv.subtotal * 0.1);
+      inv.total = inv.subtotal;
       return inv;
     });
     invoiceHistory.sort(function(a, b) { return b.yearMonth.localeCompare(a.yearMonth); });
@@ -613,7 +614,8 @@ function _saveInvoice(body) {
       line.lineNo === 1 ? (meta.invStart || '') : '',
       line.lineNo === 1 ? (meta.invEnd || '') : '',
       line.lineNo === 1 ? (meta.invNote || '') : '',
-      now
+      now,
+      line.area || ''
     ]);
   });
   return _json({ success: true, invoiceId: invoiceId, lines: lines.length });
@@ -642,7 +644,6 @@ function _getInvoiceHistory(clientId) {
 
   var result = Object.keys(map).map(function(k) { return map[k]; });
   result.sort(function(a, b) { return b.yearMonth.localeCompare(a.yearMonth); });
-  result.forEach(function(inv) { inv.total = inv.total + Math.floor(inv.total * 0.1); });
   return _json(result);
 }
 
@@ -658,13 +659,17 @@ function _getInvoice(invoiceId) {
   var data = sheet.getDataRange().getValues();
   var lines = [], meta = {};
 
+  var presetNames = ['車両代', '名変', '立替', '修理代'];
   for (var i = 1; i < data.length; i++) {
     var r = data[i];
     if (String(r[0]) !== invoiceId) continue;
+    var txt = String(r[5] || '');
+    var type = (presetNames.indexOf(txt) !== -1) ? txt : 'custom';
     lines.push({
       lineNo: Number(r[3]) || 0, date: String(r[4] || ''),
-      itemType: 'custom', itemText: String(r[5] || ''),
+      itemType: type, itemText: txt,
       qty: Number(r[6]) || 1, price: Number(r[7]) || 0, memo: String(r[8] || ''),
+      area: String(r[15] || ''),
     });
     if (Number(r[3]) === 1 && r[9]) {
       meta = { invDate: String(r[9]||''), invPayDate: String(r[10]||''), invStart: String(r[11]||''), invEnd: String(r[12]||''), invNote: String(r[13]||'') };
@@ -726,48 +731,49 @@ function checkDueDates() {
 // =====================================================
 function _uploadImage(body) {
   var plate = String(body.plate || '').trim();
-  var imageType = body.imageType || 'public'; // 'public' or 'internal'
+  var imageType = body.imageType || 'public';
   if (!plate) return _json({ error: 'ナンバーが空です' });
-
-  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
-  var sheet = ss.getSheetByName(CONFIG.SHEET.MASTER);
-  var data = sheet.getDataRange().getValues();
-  var h = data[0];
-  var ci = function(n) { return h.indexOf(n); };
-
-  var rowIdx = -1;
-  for (var i = 1; i < data.length; i++) {
-    if (String(data[i][ci(COL.PLATE)]).trim() === plate) { rowIdx = i; break; }
-  }
-  if (rowIdx === -1) return _json({ error: '車両が見つかりません' });
-
-  var colName = imageType === 'internal' ? COL.IMAGE_INTERNAL : COL.IMAGE_PUBLIC;
-  var folderId = String(data[rowIdx][ci(colName)] || '').trim();
-
-  // フォルダがなければ作成
-  if (!folderId) {
-    try {
-      var parent = DriveApp.getFolderById(CONFIG.PARENT_FOLDER_ID);
-      var carModel = data[rowIdx][ci(COL.CARMODEL)] || '';
-      // 親車両フォルダを探すか作る
-      var vehicleFolderName = carModel + '_' + plate;
-      var vehicleFolder;
-      var folders = parent.getFoldersByName(vehicleFolderName);
-      if (folders.hasNext()) { vehicleFolder = folders.next(); }
-      else { vehicleFolder = parent.createFolder(vehicleFolderName); }
-      // サブフォルダ
-      var subName = imageType === 'internal' ? '社内' : '公開';
-      var sub = vehicleFolder.getFoldersByName(subName);
-      var folder;
-      if (sub.hasNext()) { folder = sub.next(); }
-      else { folder = vehicleFolder.createFolder(subName); }
-      folderId = folder.getId();
-      sheet.getRange(rowIdx + 1, ci(colName) + 1).setValue(folderId);
-    } catch(e) { return _json({ error: 'フォルダ作成エラー: ' + e.message }); }
-  }
 
   var images = body.images || [];
   if (!images.length) return _json({ error: '画像がありません' });
+
+  // フォルダIDがbodyに含まれていればスプシ検索をスキップ
+  var folderId = String(body.folderId || '').trim();
+
+  if (!folderId) {
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    var sheet = ss.getSheetByName(CONFIG.SHEET.MASTER);
+    var data = sheet.getDataRange().getValues();
+    var h = data[0];
+    var ci = function(n) { return h.indexOf(n); };
+
+    var rowIdx = -1;
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][ci(COL.PLATE)]).trim() === plate) { rowIdx = i; break; }
+    }
+    if (rowIdx === -1) return _json({ error: '車両が見つかりません' });
+
+    var colName = imageType === 'internal' ? COL.IMAGE_INTERNAL : COL.IMAGE_PUBLIC;
+    folderId = String(data[rowIdx][ci(colName)] || '').trim();
+
+    if (!folderId) {
+      try {
+        var parent = DriveApp.getFolderById(CONFIG.PARENT_FOLDER_ID);
+        var vehicleFolderName = (data[rowIdx][ci(COL.CARMODEL)] || '') + '_' + plate;
+        var vehicleFolder;
+        var folders = parent.getFoldersByName(vehicleFolderName);
+        if (folders.hasNext()) { vehicleFolder = folders.next(); }
+        else { vehicleFolder = parent.createFolder(vehicleFolderName); }
+        var subName = imageType === 'internal' ? '社内' : '公開';
+        var sub = vehicleFolder.getFoldersByName(subName);
+        var folder;
+        if (sub.hasNext()) { folder = sub.next(); }
+        else { folder = vehicleFolder.createFolder(subName); }
+        folderId = folder.getId();
+        sheet.getRange(rowIdx + 1, ci(colName) + 1).setValue(folderId);
+      } catch(e) { return _json({ error: 'フォルダ作成エラー: ' + e.message }); }
+    }
+  }
 
   var folder = DriveApp.getFolderById(folderId);
   var uploaded = [];
@@ -780,7 +786,7 @@ function _uploadImage(body) {
     } catch(e) {}
   });
 
-  return _json({ success: true, uploaded: uploaded.length, images: uploaded });
+  return _json({ success: true, uploaded: uploaded.length, images: uploaded, folderId: folderId });
 }
 
 
@@ -1124,7 +1130,7 @@ function _getImagesFromFolder(folderId) {
           name: f.getName(),
         });
       }
-      if (imgs.length >= 20) break;
+      if (imgs.length >= 30) break;
     }
     return imgs;
   } catch (e) {
