@@ -84,16 +84,17 @@
     <div class="form-section-body">
       <div class="form-row">
         <div class="fg"><label>状態 <span class="req">*</span></label>
-          <select id="fStatus"><option value="">選択</option><option value="貸出中">貸出中</option><option value="販売可">販売可</option><option value="販売済">販売済</option><option value="修理中">修理中</option><option value="要修理">要修理</option><option value="代車">代車</option><option value="事故廃車">事故廃車</option><option value="故障廃車">故障廃車</option><option value="その他">その他</option></select>
+          <select id="fStatus"><option value="">選択</option><option value="貸出中">貸出中</option><option value="貸出可">貸出可</option><option value="販売可">販売可</option><option value="販売済">販売済</option><option value="修理中">修理中</option><option value="要修理">要修理</option><option value="代車">代車</option><option value="事故廃車">事故廃車</option><option value="故障廃車">故障廃車</option><option value="その他">その他</option></select>
         </div>
         <div class="fg"><label>エリア <span class="req">*</span></label>
-          <select id="fArea"><option value="">選択</option><option value="大阪">大阪</option><option value="名古屋">名古屋</option><option value="東京">東京</option></select>
+          <select id="fAreaSelect" onchange="if(this.value==='__custom__'){document.getElementById('fAreaCustom').style.display='';this.style.display='none';document.getElementById('fAreaCustom').focus();}"><option value="">選択</option><option value="大阪">大阪</option><option value="名古屋">名古屋</option><option value="東京">東京</option><option value="__custom__">＋ 自由入力</option></select>
+          <input type="text" id="fAreaCustom" placeholder="エリア名を入力" style="display:none;margin-top:4px">
         </div>
       </div>
       <div class="form-row">
         <div class="fg"><label>管理場所</label>
-          <select id="fStorageLocation"><option value="">選択</option><option value="場所A">場所A</option><option value="場所B">場所B</option><option value="場所C">場所C</option></select>
-          <div class="hint">場所名は後日変更可能</div>
+          <select id="fStorageSelect" onchange="if(this.value==='__custom__'){document.getElementById('fStorageCustom').style.display='';this.style.display='none';document.getElementById('fStorageCustom').focus();}"><option value="">選択</option><option value="場所A">場所A</option><option value="場所B">場所B</option><option value="場所C">場所C</option><option value="__custom__">＋ 自由入力</option></select>
+          <input type="text" id="fStorageCustom" placeholder="場所名を入力" style="display:none;margin-top:4px">
         </div>
       </div>
       <div class="form-row">
@@ -160,7 +161,7 @@
   </div>
   <!-- 画像 -->
   <div class="form-section">
-    <div class="form-section-title">公開画像（顧客にも表示・最大20枚）</div>
+    <div class="form-section-title">公開画像（顧客にも表示・最大30枚）</div>
     <div class="form-section-body">
       <div class="image-upload-area" id="dropZonePublic">
         <div class="image-upload-text">タップまたはドラッグで画像を追加</div>
@@ -243,8 +244,8 @@ function compressImage(file,callback){
 
 function handleFiles(files, type) {
   var arr = type==='internal' ? imageFilesInternal : imageFilesPublic;
-  var rem = 20 - arr.length;
-  if (rem <= 0) { showToast('画像は最大20枚までです',true); return; }
+  var rem = (type==="internal"?20:30) - arr.length;
+  if (rem <= 0) { showToast('画像は上限に達しています',true); return; }
   Array.from(files).slice(0,rem).forEach(function(file) {
     if (file.size > 5*1024*1024) { showToast(file.name+' は5MBを超えています',true); return; }
     compressImage(file, function(result) { arr.push(result); renderPreviews(type); });
@@ -267,19 +268,20 @@ function submitForm() {
   var carModel=document.getElementById('fCarModel').value.trim();
   var owner=document.getElementById('fOwner').value;
   var status=document.getElementById('fStatus').value;
-  var area=document.getElementById('fArea').value;
+  var area=document.getElementById('fAreaCustom').style.display!=='none'?document.getElementById('fAreaCustom').value.trim():document.getElementById('fAreaSelect').value;
   if (!plate) { showToast('自動車ナンバーを入力してください',true); return; }
   if (!carModel) { showToast('車種を入力してください',true); return; }
   if (!owner) { showToast('所有者を選択してください',true); return; }
   if (!status) { showToast('状態を選択してください',true); return; }
-  if (!area) { showToast('エリアを選択してください',true); return; }
+  if (!area) { showToast('エリアを入力してください',true); return; }
 
+  var storageVal=document.getElementById('fStorageCustom').style.display!=='none'?document.getElementById('fStorageCustom').value.trim():document.getElementById('fStorageSelect').value;
   var body = {
     action:'registerVehicle', key:API_KEY,
     plate:plate, carModel:carModel,
     chassis: document.getElementById('fChassis').value.trim(),
     status:status, area:area,
-    storageLocation: document.getElementById('fStorageLocation').value,
+    storageLocation: storageVal,
     loanDest: document.getElementById('fLoanDest').value.trim(),
     user: document.getElementById('fUser').value.trim(),
     owner:owner,
