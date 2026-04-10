@@ -826,10 +826,13 @@
         var honorific = (c.clientType === '個人') ? '様' : '御中';
         var html =
           '<div class="detail-section">' +
-          '<div class="detail-name">' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+          '<div><div class="detail-name">' +
           c.companyName + ' <span style="font-size:14px;font-weight:400;color:#6b7280">' + honorific + '</span>' +
           '</div><div class="detail-id">' +
           c.clientId +
+          '</div></div>' +
+          '<button onclick="openModal(\'edit\',\'' + c.clientId + '\')" style="padding:8px 16px;background:#111;color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">編集</button>' +
           "</div>" +
           '<div class="detail-section-title">基本情報</div><div class="info-grid">' +
           ii("担当者", c.contactName) +
