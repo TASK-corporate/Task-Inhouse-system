@@ -303,21 +303,27 @@ function buildImgEdit(title,images,type){
   return html;
 }
 
-// 画像圧縮（最大800px、JPEG品質60%→高速化）
+// 画像圧縮（createObjectURL方式：メモリ効率良い）
 function compressImage(file,callback){
-  var reader=new FileReader();
-  reader.onload=function(e){
-    var img=new Image();
-    img.onload=function(){
-      var MAX=800,w=img.width,h=img.height;
-      if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
-      var c=document.createElement('canvas');c.width=w;c.height=h;
-      c.getContext('2d').drawImage(img,0,0,w,h);
-      callback({name:file.name.replace(/\.\w+$/,'.jpg'),base64:c.toDataURL('image/jpeg',0.6)});
-    };
-    img.src=e.target.result;
+  var img=new Image();
+  var url=URL.createObjectURL(file);
+  img.onload=function(){
+    URL.revokeObjectURL(url);
+    var MAX=800,w=img.width,h=img.height;
+    if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+    var c=document.createElement('canvas');c.width=w;c.height=h;
+    c.getContext('2d').drawImage(img,0,0,w,h);
+    callback({name:file.name.replace(/\.\w+$/,'.jpg'),base64:c.toDataURL('image/jpeg',0.6)});
   };
-  reader.readAsDataURL(file);
+  img.onerror=function(){
+    URL.revokeObjectURL(url);
+    console.error('[compress] 画像読み込み失敗:',file.name);
+    // フォールバック：圧縮せずにFileReaderで読み込み
+    var reader=new FileReader();
+    reader.onload=function(e){callback({name:file.name,base64:e.target.result});};
+    reader.readAsDataURL(file);
+  };
+  img.src=url;
 }
 
 var mFolderIdCache={};
@@ -327,11 +333,14 @@ function mUploadImages(files,type){
   var status=document.getElementById('mImgStatus_'+type);
   status.textContent='圧縮中...';
   var images=[];var loaded=0;
-  Array.from(files).forEach(function(file){
+  var totalFiles=files.length; // ★事前保存（input.value=''でFileListが空になるため）
+  var fileArr=Array.from(files); // ★Fileオブジェクトもコピー
+  document.getElementById('mImgUpload_'+type).value=''; // ★先にクリアしてOK（fileArrにコピー済み）
+  fileArr.forEach(function(file){
     compressImage(file,function(result){
       images.push(result);loaded++;
-      status.textContent='圧縮中... ('+loaded+'/'+files.length+')';
-      if(loaded===files.length)doUpload();
+      status.textContent='圧縮中... ('+loaded+'/'+totalFiles+')';
+      if(loaded===totalFiles)doUpload();
     });
   });
   function doUpload(){
@@ -354,7 +363,6 @@ function mUploadImages(files,type){
       }
     }).catch(function(){status.textContent='';showToast('通信エラー',true);});
   }
-  document.getElementById('mImgUpload_'+type).value='';
 }
 
 function mDeleteImage(fileId,type){
