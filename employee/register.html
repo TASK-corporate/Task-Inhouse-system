@@ -214,7 +214,7 @@ dropZonePublic.addEventListener('click', function() { imageInputPublic.click(); 
 dropZonePublic.addEventListener('dragover', function(e) { e.preventDefault(); dropZonePublic.classList.add('dragover'); });
 dropZonePublic.addEventListener('dragleave', function() { dropZonePublic.classList.remove('dragover'); });
 dropZonePublic.addEventListener('drop', function(e) { e.preventDefault(); dropZonePublic.classList.remove('dragover'); handleFiles(e.dataTransfer.files,'public'); });
-imageInputPublic.addEventListener('change', function() { handleFiles(this.files,'public'); this.value=''; });
+imageInputPublic.addEventListener('change', function() { var f=Array.from(this.files); this.value=''; handleFiles(f,'public'); });
 
 // 社内画像
 var dropZoneInternal = document.getElementById('dropZoneInternal');
@@ -223,23 +223,27 @@ dropZoneInternal.addEventListener('click', function() { imageInputInternal.click
 dropZoneInternal.addEventListener('dragover', function(e) { e.preventDefault(); dropZoneInternal.classList.add('dragover'); });
 dropZoneInternal.addEventListener('dragleave', function() { dropZoneInternal.classList.remove('dragover'); });
 dropZoneInternal.addEventListener('drop', function(e) { e.preventDefault(); dropZoneInternal.classList.remove('dragover'); handleFiles(e.dataTransfer.files,'internal'); });
-imageInputInternal.addEventListener('change', function() { handleFiles(this.files,'internal'); this.value=''; });
+imageInputInternal.addEventListener('change', function() { var f=Array.from(this.files); this.value=''; handleFiles(f,'internal'); });
 
 // 画像圧縮（最大800px、JPEG品質60%→高速化）
 function compressImage(file,callback){
-  var reader=new FileReader();
-  reader.onload=function(e){
-    var img=new Image();
-    img.onload=function(){
-      var MAX=800,w=img.width,h=img.height;
-      if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
-      var c=document.createElement('canvas');c.width=w;c.height=h;
-      c.getContext('2d').drawImage(img,0,0,w,h);
-      callback({name:file.name.replace(/\.\w+$/,'.jpg'),base64:c.toDataURL('image/jpeg',0.6)});
-    };
-    img.src=e.target.result;
+  var img=new Image();
+  var url=URL.createObjectURL(file);
+  img.onload=function(){
+    URL.revokeObjectURL(url);
+    var MAX=800,w=img.width,h=img.height;
+    if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+    var c=document.createElement('canvas');c.width=w;c.height=h;
+    c.getContext('2d').drawImage(img,0,0,w,h);
+    callback({name:file.name.replace(/\.\w+$/,'.jpg'),base64:c.toDataURL('image/jpeg',0.6)});
   };
-  reader.readAsDataURL(file);
+  img.onerror=function(){
+    URL.revokeObjectURL(url);
+    var reader=new FileReader();
+    reader.onload=function(e){callback({name:file.name,base64:e.target.result});};
+    reader.readAsDataURL(file);
+  };
+  img.src=url;
 }
 
 function handleFiles(files, type) {
