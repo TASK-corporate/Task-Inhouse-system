@@ -36,6 +36,8 @@
     .card-val{font-size:14px;font-weight:600}
     .badge{display:inline-block;padding:3px 10px;font-size:11px;font-weight:600;color:#fff}
     .badge-ok{background:#059669}
+    .badge-sale{background:#059669}
+    .badge-inuse{background:#d97706}
     .badge-ng{background:#6b7280}
     .unavailable-label{position:absolute;top:12px;right:12px;background:rgba(0,0,0,.75);color:#fff;font-size:11px;font-weight:600;padding:4px 10px;z-index:2}
     .detail{position:fixed;top:0;left:0;right:0;bottom:0;background:#111;z-index:100;overflow-y:auto;display:none}
@@ -125,19 +127,21 @@ function filterAndRender(){
   var kw=(document.getElementById('searchInput').value||'').trim().toLowerCase();
   var list=vehicles;
   if(kw){list=list.filter(function(v){return(v.carModel||'').toLowerCase().indexOf(kw)!==-1||(v.area||'').toLowerCase().indexOf(kw)!==-1||(v.driveType||'').toLowerCase().indexOf(kw)!==-1;});}
-  list.sort(function(a,b){return a.status==='貸出可'?-1:b.status==='貸出可'?1:0;});
+  var statusOrder={'販売可':0,'貸出可':1,'貸出中':2,'貸出不可':3};
+  list.sort(function(a,b){return (statusOrder[a.status]||3)-(statusOrder[b.status]||3);});
   document.getElementById('vehicleCount').textContent=kw?list.length+'台 / 全'+vehicles.length+'台':'全'+vehicles.length+'台';
   if(!list.length){document.getElementById('vehicleList').innerHTML='<div class="empty-msg">条件に一致する車両がありません</div>';return;}
   var html='';
   list.forEach(function(v){
-    var ok=v.status==='貸出可';
+    var ok=v.status==='貸出可'||v.status==='販売可';
+    var badgeCls=v.status==='販売可'?'badge-sale':v.status==='貸出可'?'badge-ok':v.status==='貸出中'?'badge-inuse':'badge-ng';
     var img=getFirstImg(v);
-    html+='<div class="card'+(ok?'':' unavailable')+'" onclick="showDetail('+v.id+')">'
-      +(ok?'':'<div class="unavailable-label">貸出不可</div>')
+    html+='<div class="card'+(ok?'':v.status==='貸出中'?' unavailable':' unavailable')+'" onclick="showDetail('+v.id+')">'
+      +(ok?'':'<div class="unavailable-label">'+v.status+'</div>')
       +'<img src="'+img+'" class="card-img" alt="'+esc(v.carModel||'')+'" onerror="this.src=\'https://placehold.co/400x200/e5e7eb/9ca3af?text=No+Image\'">'
       +'<div class="card-body"><div class="card-title">'+esc(v.carModel||'車種不明')+'</div><div class="card-grid">'
       +ci('価格',v.price?v.price.toLocaleString()+'円/月':'未設定')
-      +ci('ステータス','<span class="badge '+(ok?'badge-ok':'badge-ng')+'">'+v.status+'</span>')
+      +ci('ステータス','<span class="badge '+badgeCls+'">'+v.status+'</span>')
       +ci('駆動方式',v.driveType||'-')
       +ci('スモークガラス',v.smokeGlass||'-')
       +ci('エリア',v.area||'-',true)
@@ -153,7 +157,8 @@ function showDetail(id){
   var v=vehicles.find(function(x){return x.id===id;});
   if(!v)return;
   currentVehicle=v;currentImgIdx=0;
-  var ok=v.status==='貸出可';
+  var ok=v.status==='貸出可'||v.status==='販売可';
+  var badgeCls=v.status==='販売可'?'badge-sale':v.status==='貸出可'?'badge-ok':v.status==='貸出中'?'badge-inuse':'badge-ng';
   var imgs=(v.images||[]).filter(function(img){var u=typeof img==='object'?img.url:img;return u&&u.indexOf('placehold')===-1;});
   var gHtml='';
   if(imgs.length>0){
@@ -167,7 +172,7 @@ function showDetail(id){
 
   var info='<div class="detail-info"><h1 class="detail-title">'+esc(v.carModel||'車種不明')+'</h1><div class="detail-list">'
     +di('価格',v.price?v.price.toLocaleString()+'円/月':'未設定')
-    +di('ステータス','<span class="badge '+(ok?'badge-ok':'badge-ng')+'">'+v.status+'</span>')
+    +di('ステータス','<span class="badge '+badgeCls+'">'+v.status+'</span>')
     +di('エリア',v.area||'-')
     +di('車検満了日',v.inspection||'-')
     +di('駆動方式',v.driveType||'-')
