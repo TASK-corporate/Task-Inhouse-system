@@ -1,1539 +1,236 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>社用車管理システム - 社員向け</title>
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      body {
-        font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
-          Arial, sans-serif;
-        background: #f3f4f6;
-      }
-      .container {
-        max-width: 1200px;
-        margin: 0 auto;
-        min-height: 100vh;
-      }
-      .header {
-        background: #fff;
-        padding: 10px 16px;
-        border-bottom: 1px solid #d1d5db;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-      }
-      .header-top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-bottom: 8px;
-      }
-      .header h1 {
-        font-size: 18px;
-        font-weight: bold;
-      }
-      .header p {
-        font-size: 12px;
-        color: #6b7280;
-        margin-top: 1px;
-      }
-      .nav-links {
-        display: flex;
-        gap: 4px;
-        flex-wrap: wrap;
-      }
-      .nav-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 6px 10px;
-        background: #000;
-        color: #fff;
-        text-decoration: none;
-        font-size: 11px;
-        font-weight: 600;
-      }
-      .nav-link:hover {
-        background: #333;
-      }
-      .nav-link svg {
-        width: 12px;
-        height: 12px;
-      }
-      .search-area {
-        margin-bottom: 0;
-      }
-      .keyword-row {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 0;
-      }
-      .keyword-input {
-        flex: 1;
-        padding: 8px 12px;
-        border: 1.5px solid #d1d5db;
-        font-size: 14px;
-        background: #fff;
-      }
-      .keyword-input:focus {
-        outline: none;
-        border-color: #000;
-      }
-      .filter-toggle {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        padding: 6px 0;
-        font-size: 12px;
-        color: #6b7280;
-        cursor: pointer;
-        border: none;
-        background: none;
-      }
-      .filter-toggle svg {
-        width: 14px;
-        height: 14px;
-        transition: transform .2s;
-      }
-      .filter-toggle.open svg {
-        transform: rotate(180deg);
-      }
-      .filter-area {
-        display: none;
-        flex-wrap: wrap;
-        gap: 8px;
-        align-items: flex-end;
-      }
-      .filter-area.open {
-        display: flex;
-      }
-      .filter-group {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        min-width: 120px;
-      }
-      .filter-group label {
-        font-size: 11px;
-        font-weight: 600;
-        color: #6b7280;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-      .filter-group select {
-        padding: 7px 10px;
-        border: 1px solid #d1d5db;
-        background: #fff;
-        font-size: 13px;
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 8px center;
-        padding-right: 28px;
-        cursor: pointer;
-      }
-      .filter-group select:focus {
-        outline: none;
-        border-color: #000;
-      }
-      .filter-reset {
-        padding: 7px 14px;
-        border: 1px solid #d1d5db;
-        background: none;
-        font-size: 13px;
-        color: #6b7280;
-        cursor: pointer;
-        align-self: flex-end;
-      }
-      .filter-reset:hover {
-        border-color: #000;
-        color: #000;
-      }
-      .table-container {
-        overflow-x: auto;
-      }
-      table {
-        width: 100%;
-        background: #fff;
-        border-collapse: collapse;
-      }
-      thead tr {
-        background: #000;
-        color: #fff;
-        text-align: left;
-        font-size: 13px;
-      }
-      thead th {
-        padding: 10px 12px;
-        font-weight: 600;
-        white-space: nowrap;
-      }
-      tbody tr {
-        font-size: 13px;
-        border-bottom: 1px solid #e5e7eb;
-        cursor: pointer;
-        transition: background 0.15s;
-      }
-      tbody tr:nth-child(even) {
-        background: #f9fafb;
-      }
-      tbody tr:hover {
-        background: #e5e7eb;
-      }
-      tbody tr.hidden-row {
-        display: none;
-      }
-      tbody td {
-        padding: 10px 12px;
-        white-space: nowrap;
-      }
-      .no-result-row td {
-        text-align: center;
-        color: #9ca3af;
-        padding: 40px;
-      }
-      .badge {
-        display: inline-block;
-        padding: 3px 8px;
-        font-size: 11px;
-        font-weight: 600;
-        color: #fff;
-      }
-      .badge-available {
-        background: #059669;
-      }
-      .badge-sold {
-        background: #10b981;
-      }
-      .badge-inuse {
-        background: #d97706;
-      }
-      .badge-repair {
-        background: #dc2626;
-      }
-      .badge-retired {
-        background: #6b7280;
-      }
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>車両レンタル - 株式会社TASK</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Hiragino Sans','Helvetica Neue',Arial,sans-serif;background:#111;color:#fff;min-height:100vh;min-height:100dvh}
+    .header{background:#fff;color:#111;padding:20px 16px;border-bottom:3px solid #111;position:sticky;top:0;z-index:10}
+    .header-inner{max-width:480px;margin:0 auto}
+    .header h1{font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#111}
+    .header p{font-size:20px;font-weight:700;margin-top:4px;line-height:1.3}
+    .header-count{font-size:12px;color:#6b7280;margin-top:6px}
+    .search-wrap{max-width:480px;margin:0 auto;padding:12px 16px 0}
+    .search-input{width:100%;padding:10px 14px;border:2px solid #333;background:#1a1a1a;color:#fff;font-size:14px;-webkit-appearance:none;border-radius:0}
+    .search-input:focus{outline:none;border-color:#fff}
+    .search-input::placeholder{color:#6b7280}
+    .state-box{max-width:480px;margin:0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:16px}
+    .spinner{width:36px;height:36px;border:3px solid #333;border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .state-text{font-size:13px;color:#9ca3af}
+    .error-box{background:#fee2e2;color:#991b1b;padding:16px;margin:16px;text-align:center;font-size:14px}
+    .retry-btn{margin-top:12px;padding:8px 20px;background:#111;color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer}
+    .list{max-width:480px;margin:0 auto;padding:12px 16px 80px}
+    .card{background:#fff;color:#111;margin-bottom:12px;overflow:hidden;cursor:pointer;transition:transform .15s;position:relative}
+    .card:active{transform:scale(.98)}
+    .card.unavailable{opacity:.55}
+    .card-img{width:100%;height:200px;object-fit:cover;background:#e5e7eb;display:block}
+    .card-body{padding:16px}
+    .card-title{font-size:18px;font-weight:700;margin-bottom:12px}
+    .card-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .card-item{border-bottom:1px solid #e5e7eb;padding-bottom:8px}
+    .card-item.full{grid-column:span 2}
+    .card-label{font-size:11px;color:#6b7280;margin-bottom:2px}
+    .card-val{font-size:14px;font-weight:600}
+    .badge{display:inline-block;padding:3px 10px;font-size:11px;font-weight:600;color:#fff}
+    .badge-ok{background:#059669}
+    .badge-sale{background:#059669}
+    .badge-inuse{background:#d97706}
+    .badge-ng{background:#6b7280}
+    .unavailable-label{position:absolute;top:12px;right:12px;background:rgba(0,0,0,.75);color:#fff;font-size:11px;font-weight:600;padding:4px 10px;z-index:2}
+    .detail{position:fixed;top:0;left:0;right:0;bottom:0;background:#111;z-index:100;overflow-y:auto;display:none}
+    .detail.active{display:block}
+    .detail-inner{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh}
+    .detail-header{background:#fff;color:#111;position:sticky;top:0;z-index:10;border-bottom:2px solid #111}
+    .detail-header-inner{padding:12px 16px;display:flex;align-items:center;gap:10px}
+    .back-btn{padding:8px;background:none;border:none;cursor:pointer;color:#111}
+    .back-btn svg{width:20px;height:20px}
+    .detail-header h2{font-size:16px;font-weight:700}
+    .detail-content{background:#fff;color:#111;margin:12px}
+    .gallery{background:#000;position:relative}
+    .main-img-wrap{width:100%;height:300px;position:relative}
+    .main-img{width:100%;height:100%;object-fit:contain;background:#000;display:block}
+    .img-counter{position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.7);color:#fff;padding:3px 10px;font-size:11px;font-weight:600}
+    .img-nav{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;background:rgba(0,0,0,.5);color:#fff;border:none;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .img-nav:hover{background:rgba(0,0,0,.8)}
+    .img-nav.prev{left:8px}
+    .img-nav.next{right:8px}
+    .thumb-row{display:flex;gap:6px;padding:8px;background:#1a1a1a;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .thumb{width:56px;height:56px;flex-shrink:0;border:2px solid transparent;overflow:hidden;cursor:pointer}
+    .thumb.active{border-color:#fff}
+    .thumb img{width:100%;height:100%;object-fit:cover}
+    .no-img{width:100%;height:200px;background:#e5e7eb;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:14px}
+    .detail-info{padding:20px}
+    .detail-title{font-size:22px;font-weight:700;margin-bottom:16px}
+    .detail-list{display:flex;flex-direction:column;gap:14px}
+    .d-item{border-bottom:1px solid #e5e7eb;padding-bottom:10px}
+    .d-label{font-size:12px;color:#6b7280;margin-bottom:3px}
+    .d-value{font-size:16px;font-weight:600}
+    .contact-btn{width:100%;padding:14px;font-size:15px;font-weight:700;border:none;cursor:pointer;margin-top:20px;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .2s}
+    .contact-btn.line{background:#06C755;color:#fff}
+    .contact-btn.line:active{background:#05a648}
+    .contact-btn:disabled{background:#9ca3af;cursor:not-allowed}
+    .empty-msg{text-align:center;padding:40px 16px;color:#6b7280;font-size:14px}
+    @media(max-width:380px){.card-img{height:160px}.main-img-wrap{height:240px}.card-title{font-size:16px}}
+  </style>
+  <script src="../config.js"></script>
+</head>
+<body>
+<div id="listView">
+  <div class="header"><div class="header-inner">
+    <h1>TASK Car Rental</h1>
+    <p>法人向け車両レンタルサービス</p>
+    <div class="header-count" id="vehicleCount"></div>
+  </div></div>
+  <div class="search-wrap">
+    <input type="text" class="search-input" id="searchInput" placeholder="車種・エリアで検索..." oninput="filterAndRender()">
+  </div>
+  <div class="state-box" id="loadingState"><div class="spinner"></div><div class="state-text">車両情報を読み込んでいます...</div></div>
+  <div class="error-box" id="errorState" style="display:none"><p id="errorMsg">読み込みに失敗しました</p><button class="retry-btn" onclick="fetchData()">再試行</button></div>
+  <div class="list" id="vehicleList" style="display:none"></div>
+</div>
+<div class="detail" id="detailView">
+  <div class="detail-inner">
+    <div class="detail-header"><div class="detail-header-inner">
+      <button class="back-btn" id="backBtn"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+      <h2>車両詳細</h2>
+    </div></div>
+    <div class="detail-content" id="detailContent"></div>
+  </div>
+</div>
+<script>
+var GAS_URL=APP_CONFIG.GAS_URL,API_KEY=APP_CONFIG.API_KEY_CLIENT,vehicles=[],currentImgIdx=0,currentVehicle=null;
 
-      /* 詳細ビュー */
-      .detail-view {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: #f3f4f6;
-        z-index: 100;
-        overflow-y: auto;
-      }
-      .detail-container {
-        max-width: 896px;
-        margin: 0 auto;
-        min-height: 100vh;
-      }
-      .detail-header {
-        background: #fff;
-        border-bottom: 1px solid #d1d5db;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-      }
-      .detail-header-inner {
-        padding: 16px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-      .back-btn {
-        padding: 8px;
-        background: none;
-        border: none;
-        cursor: pointer;
-      }
-      .back-btn:hover {
-        background: #f3f4f6;
-      }
-      .detail-header h2 {
-        font-size: 20px;
-        font-weight: bold;
-        flex: 1;
-      }
-      .detail-content {
-        background: #fff;
-        margin: 16px;
-        padding: 24px;
-      }
-      .detail-title {
-        margin-bottom: 24px;
-      }
-      .detail-title h3 {
-        font-size: 24px;
-        font-weight: bold;
-        display: inline-block;
-        margin-right: 12px;
-      }
-      .detail-title p {
-        color: #6b7280;
-        font-size: 16px;
-        margin-top: 8px;
-      }
-      .detail-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-        margin-bottom: 24px;
-      }
-      @media (max-width: 600px) {
-        .detail-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-      .d-item {
-        border-bottom: 1px solid #e5e7eb;
-        padding-bottom: 12px;
-      }
-      .d-label {
-        font-size: 13px;
-        color: #6b7280;
-        margin-bottom: 4px;
-      }
-      .d-value {
-        font-size: 15px;
-        font-weight: 600;
-      }
-      .images-section {
-        margin-bottom: 24px;
-      }
-      .images-title {
-        font-size: 13px;
-        color: #6b7280;
-        margin-bottom: 8px;
-        font-weight: 600;
-      }
-      .images-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        gap: 10px;
-      }
-      .images-grid img {
-        width: 100%;
-        height: 140px;
-        object-fit: cover;
-        border: 2px solid #e5e7eb;
-        cursor: pointer;
-        transition: transform 0.2s;
-      }
-      .images-grid img:hover {
-        transform: scale(1.05);
-        border-color: #000;
-      }
-      .no-images {
-        color: #9ca3af;
-        font-size: 14px;
-        padding: 20px;
-        text-align: center;
-        background: #f9fafb;
-      }
-      .img-wrap {
-        position: relative;
-        display: inline-block;
-      }
-      .img-wrap img {
-        width: 100%;
-        height: 140px;
-        object-fit: cover;
-        border: 2px solid #e5e7eb;
-        cursor: pointer;
-        transition: transform 0.2s;
-      }
-      .img-wrap img:hover {
-        transform: scale(1.02);
-        border-color: #000;
-      }
-      .img-del-btn {
-        position: absolute;
-        top: 4px;
-        right: 4px;
-        width: 28px;
-        height: 28px;
-        background: rgba(0, 0, 0, 0.7);
-        color: #fff;
-        border: none;
-        font-size: 16px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0.7;
-        transition: opacity 0.2s;
-      }
-      .img-wrap:hover .img-del-btn {
-        opacity: 1;
-      }
-      .img-add-area {
-        margin-top: 12px;
-      }
-      .img-add-btn {
-        padding: 10px 20px;
-        background: #fff;
-        border: 2px dashed #d1d5db;
-        color: #6b7280;
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-        width: 100%;
-        transition: border-color 0.2s;
-      }
-      .img-add-btn:hover {
-        border-color: #111;
-        color: #111;
-      }
-      #imgUploadStatus {
-        font-size: 13px;
-        color: #6b7280;
-        margin-top: 8px;
-        text-align: center;
-      }
+function fetchData(){
+  document.getElementById('loadingState').style.display='flex';
+  document.getElementById('errorState').style.display='none';
+  document.getElementById('vehicleList').style.display='none';
+  fetch(GAS_URL+'?role=client&key='+API_KEY)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!Array.isArray(d)||d.length===0)throw new Error('車両データがありません');
+      vehicles=d;
+      document.getElementById('loadingState').style.display='none';
+      document.getElementById('vehicleList').style.display='block';
+      filterAndRender();
+    })
+    .catch(function(err){
+      document.getElementById('loadingState').style.display='none';
+      document.getElementById('errorState').style.display='block';
+      document.getElementById('errorMsg').textContent=err.message||'通信エラー';
+    });
+}
 
-      /* アクションボタン */
-      .detail-actions {
-        display: flex;
-        gap: 12px;
-        margin-top: 24px;
-        padding-top: 24px;
-        border-top: 1px solid #e5e7eb;
-      }
-      .action-btn {
-        flex: 1;
-        padding: 14px;
-        font-size: 15px;
-        font-weight: 700;
-        border: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        transition: background 0.2s;
-      }
-      .action-btn svg {
-        width: 18px;
-        height: 18px;
-      }
-      .btn-edit {
-        background: #111;
-        color: #fff;
-      }
-      .btn-edit:hover {
-        background: #333;
-      }
-      .btn-delete {
-        background: #fff;
-        color: #dc2626;
-        border: 2px solid #fecaca;
-      }
-      .btn-delete:hover {
-        background: #fee2e2;
-      }
-      .btn-save-edit {
-        background: #059669;
-        color: #fff;
-      }
-      .btn-save-edit:hover {
-        background: #047857;
-      }
-      .btn-cancel {
-        background: #fff;
-        color: #6b7280;
-        border: 2px solid #d1d5db;
-      }
-      .btn-cancel:hover {
-        background: #f3f4f6;
-      }
+function filterAndRender(){
+  var kw=(document.getElementById('searchInput').value||'').trim().toLowerCase();
+  var list=vehicles;
+  if(kw){list=list.filter(function(v){return(v.carModel||'').toLowerCase().indexOf(kw)!==-1||(v.area||'').toLowerCase().indexOf(kw)!==-1||(v.driveType||'').toLowerCase().indexOf(kw)!==-1;});}
+  var statusOrder={'販売可':0,'貸出可':1,'貸出中':2,'貸出不可':3};
+  list.sort(function(a,b){return (statusOrder[a.status]||3)-(statusOrder[b.status]||3);});
+  document.getElementById('vehicleCount').textContent=kw?list.length+'台 / 全'+vehicles.length+'台':'全'+vehicles.length+'台';
+  if(!list.length){document.getElementById('vehicleList').innerHTML='<div class="empty-msg">条件に一致する車両がありません</div>';return;}
+  var html='';
+  list.forEach(function(v){
+    var ok=v.status==='貸出可'||v.status==='販売可';
+    var badgeCls=v.status==='販売可'?'badge-sale':v.status==='貸出可'?'badge-ok':v.status==='貸出中'?'badge-inuse':'badge-ng';
+    var img=getFirstImg(v);
+    html+='<div class="card'+(ok?'':v.status==='貸出中'?' unavailable':' unavailable')+'" onclick="showDetail('+v.id+')">'
+      +(ok?'':'<div class="unavailable-label">'+v.status+'</div>')
+      +'<img src="'+img+'" class="card-img" alt="'+esc(v.carModel||'')+'" onerror="this.src=\'https://placehold.co/400x200/e5e7eb/9ca3af?text=No+Image\'">'
+      +'<div class="card-body"><div class="card-title">'+esc(v.carModel||'車種不明')+'</div><div class="card-grid">'
+      +ci('価格',v.price?v.price.toLocaleString()+'円/月':'未設定')
+      +ci('ステータス','<span class="badge '+badgeCls+'">'+v.status+'</span>')
+      +ci('駆動方式',v.driveType||'-')
+      +ci('スモークガラス',v.smokeGlass||'-')
+      +ci('エリア',v.area||'-',true)
+      +ci('車検満了日',v.inspection||'-',true)
+      +'</div></div></div>';
+  });
+  document.getElementById('vehicleList').innerHTML=html;
+}
+function ci(l,val,full){return '<div class="card-item'+(full?' full':'')+'"><div class="card-label">'+l+'</div><div class="card-val">'+val+'</div></div>';}
+function getFirstImg(v){if(v.images&&v.images.length>0){var u=typeof v.images[0]==='object'?v.images[0].url:v.images[0];if(u&&u.indexOf('placehold')===-1)return u;}return'https://placehold.co/400x200/e5e7eb/9ca3af?text=No+Image';}
 
-      /* 編集モードのフォーム */
-      .edit-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-        margin-bottom: 24px;
-      }
-      @media (max-width: 600px) {
-        .edit-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-      .edit-item {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-      .edit-item label {
-        font-size: 12px;
-        font-weight: 600;
-        color: #6b7280;
-      }
-      .edit-item input,
-      .edit-item select {
-        padding: 10px 12px;
-        border: 1.5px solid #d1d5db;
-        font-size: 14px;
-        color: #111;
-        background: #fff;
-        -webkit-appearance: none;
-      }
-      .edit-item input:focus,
-      .edit-item select:focus {
-        outline: none;
-        border-color: #111;
-      }
-      .edit-item select {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 10px center;
-        padding-right: 30px;
-        cursor: pointer;
-      }
-      .edit-section-title {
-        font-size: 11px;
-        font-weight: 700;
-        color: #374151;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        padding: 10px 0 6px;
-        border-bottom: 2px solid #111;
-        margin-bottom: 12px;
-        grid-column: 1/-1;
-      }
+function showDetail(id){
+  var v=vehicles.find(function(x){return x.id===id;});
+  if(!v)return;
+  currentVehicle=v;currentImgIdx=0;
+  var ok=v.status==='貸出可'||v.status==='販売可';
+  var badgeCls=v.status==='販売可'?'badge-sale':v.status==='貸出可'?'badge-ok':v.status==='貸出中'?'badge-inuse':'badge-ng';
+  var imgs=(v.images||[]).filter(function(img){var u=typeof img==='object'?img.url:img;return u&&u.indexOf('placehold')===-1;});
+  var gHtml='';
+  if(imgs.length>0){
+    var firstUrl=typeof imgs[0]==='object'?imgs[0].url:imgs[0];
+    gHtml='<div class="gallery"><div class="main-img-wrap"><img id="mainImg" src="'+firstUrl+'" class="main-img"><div class="img-counter"><span id="imgNum">1</span> / '+imgs.length+'</div>';
+    if(imgs.length>1)gHtml+='<button class="img-nav prev" onclick="navImg(-1)">‹</button><button class="img-nav next" onclick="navImg(1)">›</button>';
+    gHtml+='</div>';
+    if(imgs.length>1){gHtml+='<div class="thumb-row">';imgs.forEach(function(img,i){var u=typeof img==='object'?img.url:img;gHtml+='<div class="thumb'+(i===0?' active':'')+'" onclick="goImg('+i+')"><img src="'+u+'"></div>';});gHtml+='</div>';}
+    gHtml+='</div>';
+  }else{gHtml='<div class="no-img">画像なし</div>';}
 
-      .toast {
-        position: fixed;
-        bottom: 24px;
-        left: 50%;
-        transform: translateX(-50%) translateY(80px);
-        background: #1e293b;
-        color: #fff;
-        padding: 12px 24px;
-        font-size: 14px;
-        font-weight: 600;
-        z-index: 999;
-        transition: transform 0.3s ease;
-        pointer-events: none;
-      }
-      .toast.show {
-        transform: translateX(-50%) translateY(0);
-      }
-      .toast.error {
-        background: #dc2626;
-      }
-      .hidden {
-        display: none;
-      }
-      svg {
-        width: 24px;
-        height: 24px;
-      }
-    </style>
-    <script src="../config.js"></script>
-    <script src="../auth.js"></script>
-  </head>
-  <body>
-    <div id="listView" class="container">
-      <div class="header">
-        <div class="header-top">
-          <div>
-            <h1>車両管理システム</h1>
-            <p id="vehicleCount">読み込み中...</p>
-          </div>
-          <div class="nav-links">
-            <a href="register.html" class="nav-link"
-              ><svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 4v16m8-8H4"
-                /></svg
-              >車両登録</a
-            >
-            <a href="modify.html" class="nav-link"
-              ><svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                /></svg
-              >一括修正</a
-            >
-            <a href="clients.html" class="nav-link"
-              ><svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
-                /></svg
-              >取引先</a
-            >
-            <a href="invoice.html" class="nav-link"
-              ><svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                /></svg
-              >請求書</a
-            >
-          </div>
-        </div>
-        <div class="search-area">
-          <div class="keyword-row">
-            <input
-              type="text"
-              class="keyword-input"
-              id="keywordInput"
-              placeholder="ナンバー・車種・車台番号・貸出先で検索..."
-              oninput="applyFilters()"
-            />
-          </div>
-          <button class="filter-toggle" id="filterToggle" onclick="var fa=document.getElementById('filterAreaWrap');var t=this;fa.classList.toggle('open');t.classList.toggle('open');"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6"/></svg>絞り込み</button>
-          <div class="filter-area" id="filterAreaWrap">
-            <div class="filter-group">
-              <label>状態</label
-              ><select id="filterStatus" onchange="applyFilters()">
-                <option value="">すべて</option>
-                <option value="貸出中">貸出中</option>
-                <option value="販売可">販売可</option>
-                <option value="販売済">販売済</option>
-                <option value="貸出可">貸出可</option>
-                <option value="修理中">修理中</option>
-                <option value="要修理">要修理</option>
-                <option value="代車">代車</option>
-                <option value="事故廃車">事故廃車</option>
-                <option value="故障廃車">故障廃車</option>
-                <option value="その他">その他</option>
-              </select>
-            </div>
-            <div class="filter-group">
-              <label>エリア</label
-              ><select id="filterArea" onchange="applyFilters()">
-                <option value="">すべて</option>
-                <option value="大阪">大阪</option>
-                <option value="名古屋">名古屋</option>
-                <option value="東京">東京</option>
-              </select>
-            </div>
-            <div class="filter-group">
-              <label>貸出先</label
-              ><select id="filterLoanDest" onchange="applyFilters()">
-                <option value="">すべて</option>
-              </select>
-            </div>
-            <div class="filter-group">
-              <label>車検期限</label
-              ><select id="filterInspection" onchange="applyFilters()">
-                <option value="">すべて</option>
-                <option value="30">30日以内</option>
-                <option value="60">60日以内</option>
-                <option value="90">90日以内</option>
-                <option value="expired">期限切れ</option>
-              </select>
-            </div>
-            <button class="filter-reset" onclick="resetFilters()">
-              リセット
-            </button>
-          </div>
-        </div>
-      </div>
-      <div
-        id="errorArea"
-        style="color: red; padding: 16px; display: none"
-      ></div>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>ナンバー</th>
-              <th>車種</th>
-              <th>車台番号</th>
-              <th>ステータス</th>
-              <th>エリア</th>
-              <th>貸出先</th>
-              <th>使用者</th>
-              <th>所有者</th>
-              <th>任意保険</th>
-              <th>料金</th>
-              <th>車検満了日</th>
-              <th>オイル交換日</th>
-              <th>駆動方式</th>
-              <th>リモコンキー</th>
-              <th>スモークガラス</th>
-              <th>仕入時走行距離</th>
-              <th>現走行距離</th>
-              <th>備考</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="vehicleTable"></tbody>
-        </table>
-      </div>
-    </div>
+  var info='<div class="detail-info"><h1 class="detail-title">'+esc(v.carModel||'車種不明')+'</h1><div class="detail-list">'
+    +di('価格',v.price?v.price.toLocaleString()+'円/月':'未設定')
+    +di('ステータス','<span class="badge '+badgeCls+'">'+v.status+'</span>')
+    +di('エリア',v.area||'-')
+    +di('車検満了日',v.inspection||'-')
+    +di('駆動方式',v.driveType||'-')
+    +di('スモークガラス',v.smokeGlass||'-')
+    +'</div>';
+  if(ok)info+='<button class="contact-btn line" onclick="contact(\''+esc(v.carModel||'')+'\')">'
+    +'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>'
+    +'LINEで予約する</button>';
+  else info+='<button class="contact-btn" disabled>現在貸出できません</button>';
+  info+='</div>';
+  document.getElementById('detailContent').innerHTML=gHtml+info;
+  document.getElementById('detailView').classList.add('active');
+}
+function di(l,val){return '<div class="d-item"><div class="d-label">'+l+'</div><div class="d-value">'+val+'</div></div>';}
 
-    <div id="detailView" class="detail-view hidden">
-      <div class="detail-container">
-        <div class="detail-header">
-          <div class="detail-header-inner">
-            <button class="back-btn" id="backButton">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-            <h2 id="detailHeaderTitle">車両詳細情報</h2>
-          </div>
-        </div>
-        <div class="detail-content" id="detailContent"></div>
-      </div>
-    </div>
+function navImg(dir){
+  if(!currentVehicle||!currentVehicle.images)return;
+  var imgs=currentVehicle.images.filter(function(img){var u=typeof img==='object'?img.url:img;return u&&u.indexOf('placehold')===-1;});
+  if(!imgs.length)return;
+  currentImgIdx=(currentImgIdx+dir+imgs.length)%imgs.length;
+  updateImg(imgs);
+}
+function goImg(i){
+  if(!currentVehicle||!currentVehicle.images)return;
+  var imgs=currentVehicle.images.filter(function(img){var u=typeof img==='object'?img.url:img;return u&&u.indexOf('placehold')===-1;});
+  currentImgIdx=i;updateImg(imgs);
+}
+function updateImg(imgs){
+  var u=typeof imgs[currentImgIdx]==='object'?imgs[currentImgIdx].url:imgs[currentImgIdx];
+  document.getElementById('mainImg').src=u;
+  document.getElementById('imgNum').textContent=currentImgIdx+1;
+  document.querySelectorAll('.thumb').forEach(function(t,j){t.classList.toggle('active',j===currentImgIdx);});
+  var at=document.querySelectorAll('.thumb')[currentImgIdx];
+  if(at)at.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
+}
 
-    <div class="toast" id="toast"></div>
+function contact(model){
+  var text='【車両予約希望】\n車種: '+model+'\n\nこちらの車両の予約を希望します。';
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(function(){alert('予約内容をコピーしました。\nLINEの画面で貼り付けて送信してください。');}).catch(function(){fallbackCopy(text);});}
+  else{fallbackCopy(text);}
+}
+function fallbackCopy(text){
+  var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.left='-9999px';document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');alert('予約内容をコピーしました。\nLINEの画面で貼り付けて送信してください。');}catch(e){alert('こちらをLINEで送信してください:\n\n'+text);}
+  document.body.removeChild(ta);
+}
 
-    <script>
-      var GAS_URL = APP_CONFIG.GAS_URL;
-      var API_KEY = APP_CONFIG.API_KEY_EMPLOYEE;
-      var vehicles = [];
-      var editMode = false;
-      var currentVehicle = null;
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/'/g,'&#39;');}
 
-      function fmtPrice(p) {
-        if (!p && p !== 0) return "-";
-        var n = Number(String(p).replace(/[^0-9.]/g, ""));
-        return !isNaN(n) && n > 0 ? n.toLocaleString("ja-JP") + "円/月" : "-";
-      }
-      function bc(s) {
-        if (s === "販売可" || s === "貸出可") return "badge-available";
-        if (s === "販売済") return "badge-sold";
-        if (s === "貸出中") return "badge-inuse";
-        if (s === "修理中" || s === "要修理") return "badge-repair";
-        if (s === "事故廃車" || s === "故障廃車") return "badge-retired";
-        return "badge-inuse";
-      }
+document.getElementById('backBtn').addEventListener('click',function(){document.getElementById('detailView').classList.remove('active');});
 
-      function fetchData() {
-        fetch(GAS_URL + "?role=employee&key=" + API_KEY)
-          .then(function (r) {
-            return r.json();
-          })
-          .then(function (d) {
-            vehicles = d;
-            renderTable();
-          })
-          .catch(function () {
-            document.getElementById("vehicleCount").textContent = "エラー";
-            document.getElementById("errorArea").style.display = "block";
-            document.getElementById("errorArea").textContent = "データ取得失敗";
-          });
-      }
+// スワイプで画像切替
+(function(){var sx=0,g=null;
+  document.addEventListener('touchstart',function(e){g=e.target.closest('.gallery');if(g)sx=e.touches[0].clientX;},{passive:true});
+  document.addEventListener('touchend',function(e){if(!g)return;var d=e.changedTouches[0].clientX-sx;if(Math.abs(d)>50)navImg(d>0?-1:1);g=null;},{passive:true});
+})();
 
-      function renderTable() {
-        var html = "";
-        var loanDests = {};
-        vehicles.forEach(function (v) {
-          // 貸出先のユニーク値を収集
-          if (v.loanDest) loanDests[v.loanDest] = true;
-
-          html +=
-            '<tr onclick="showDetail(' +
-            v.id +
-            ')" data-plate="' +
-            (v.plateNumber || "") +
-            '" data-carmodel="' +
-            (v.carModel || "") +
-            '" data-chassis="' +
-            (v.chassisNumber || "") +
-            '" data-loandest="' +
-            (v.loanDest || "") +
-            '" data-status="' +
-            (v.status || "") +
-            '" data-area="' +
-            (v.area || "") +
-            '" data-inspection="' +
-            (v.inspection || "") +
-            '">' +
-            '<td style="font-weight:500">' +
-            (v.plateNumber || "-") +
-            "</td>" +
-            "<td>" +
-            (v.carModel || "-") +
-            "</td>" +
-            "<td>" +
-            (v.chassisNumber || "-") +
-            "</td>" +
-            '<td><span class="badge ' +
-            bc(v.status) +
-            '">' +
-            (v.status || "-") +
-            "</span></td>" +
-            "<td>" +
-            (v.area || "-") +
-            "</td>" +
-            "<td>" +
-            (v.loanDest || "-") +
-            "</td>" +
-            "<td>" +
-            (v.user || "-") +
-            "</td>" +
-            "<td>" +
-            (v.owner || "-") +
-            "</td>" +
-            "<td>" +
-            (v.insurance || "-") +
-            "</td>" +
-            '<td style="font-weight:600">' +
-            fmtPrice(v.price) +
-            "</td>" +
-            "<td>" +
-            (v.inspection || "-") +
-            "</td>" +
-            "<td>" +
-            (v.oil || "-") +
-            "</td>" +
-            "<td>" +
-            (v.driveType || "-") +
-            "</td>" +
-            "<td>" +
-            (v.remoteKey || "-") +
-            "</td>" +
-            "<td>" +
-            (v.smokeGlass || "-") +
-            "</td>" +
-            "<td>" +
-            (v.mileageInitial
-              ? Number(v.mileageInitial).toLocaleString() + "km"
-              : "-") +
-            "</td>" +
-            "<td>" +
-            (v.mileageCurrent
-              ? Number(v.mileageCurrent).toLocaleString() + "km"
-              : "-") +
-            "</td>" +
-            "<td>" +
-            (v.note || "-") +
-            "</td>" +
-            '<td><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#9ca3af"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></td></tr>';
-        });
-        document.getElementById("vehicleTable").innerHTML = html;
-        document.getElementById("vehicleCount").textContent =
-          "全" + vehicles.length + "台";
-
-        // 貸出先セレクトを動的生成
-        var sel = document.getElementById("filterLoanDest");
-        var currentVal = sel.value;
-        sel.innerHTML = '<option value="">すべて</option>';
-        Object.keys(loanDests)
-          .sort()
-          .forEach(function (d) {
-            sel.innerHTML += '<option value="' + d + '">' + d + "</option>";
-          });
-        sel.value = currentVal;
-      }
-
-      function applyFilters() {
-        var kw = document
-          .getElementById("keywordInput")
-          .value.trim()
-          .toLowerCase();
-        var st = document.getElementById("filterStatus").value;
-        var ar = document.getElementById("filterArea").value;
-        var ld = document.getElementById("filterLoanDest").value;
-        var iv = document.getElementById("filterInspection").value;
-        var today = new Date();
-        today.setHours(0, 0, 0, 0);
-        var rows = document.querySelectorAll("#vehicleTable tr[data-plate]"),
-          vis = 0;
-        rows.forEach(function (row) {
-          var mKw = true;
-          if (kw) {
-            var p = (row.getAttribute("data-plate") || "").toLowerCase(),
-              m = (row.getAttribute("data-carmodel") || "").toLowerCase(),
-              c = (row.getAttribute("data-chassis") || "").toLowerCase(),
-              d = (row.getAttribute("data-loandest") || "").toLowerCase();
-            mKw =
-              p.indexOf(kw) !== -1 ||
-              m.indexOf(kw) !== -1 ||
-              c.indexOf(kw) !== -1 ||
-              d.indexOf(kw) !== -1;
-          }
-          var mSt = !st || row.getAttribute("data-status") === st;
-          var mAr = !ar || row.getAttribute("data-area") === ar;
-          var mLd = !ld || row.getAttribute("data-loandest") === ld;
-          var mIv = true;
-          if (iv) {
-            var is = row.getAttribute("data-inspection");
-            if (!is) {
-              mIv = false;
-            } else {
-              var diff = Math.round((new Date(is) - today) / 864e5);
-              mIv =
-                iv === "expired" ? diff < 0 : diff >= 0 && diff <= parseInt(iv);
-            }
-          }
-          row.classList.toggle(
-            "hidden-row",
-            !(mKw && mSt && mAr && mLd && mIv),
-          );
-          if (mKw && mSt && mAr && mLd && mIv) vis++;
-        });
-        var nr = document.getElementById("noResultRow");
-        if (vis === 0) {
-          if (!nr) {
-            var tr = document.createElement("tr");
-            tr.id = "noResultRow";
-            tr.className = "no-result-row";
-            tr.innerHTML =
-              '<td colspan="19">条件に一致する車両がありません</td>';
-            document.getElementById("vehicleTable").appendChild(tr);
-          }
-        } else {
-          if (nr) nr.remove();
-        }
-        document.getElementById("vehicleCount").textContent =
-          vis === vehicles.length
-            ? "全" + vehicles.length + "台"
-            : vehicles.length + "台中 " + vis + "台を表示";
-      }
-      function resetFilters() {
-        document.getElementById("keywordInput").value = "";
-        document.getElementById("filterStatus").value = "";
-        document.getElementById("filterArea").value = "";
-        document.getElementById("filterLoanDest").value = "";
-        document.getElementById("filterInspection").value = "";
-        applyFilters();
-      }
-
-      // ============================================================
-      // 詳細画面：閲覧モード
-      // ============================================================
-      function showDetail(id) {
-        var v = vehicles.find(function (x) {
-          return x.id === id;
-        });
-        if (!v) return;
-        currentVehicle = v;
-        editMode = false;
-        document.getElementById("detailHeaderTitle").textContent =
-          "車両詳細情報";
-        renderViewMode(v);
-        document.getElementById("listView").classList.add("hidden");
-        document.getElementById("detailView").classList.remove("hidden");
-      }
-
-      function renderViewMode(v) {
-        // 公開画像セクション
-        var imgHtml = buildImageSection(
-          "公開画像（顧客にも表示）",
-          v.imagesPublic,
-          "public",
-        );
-        // 社内画像セクション
-        imgHtml += buildImageSection(
-          "社内画像（社内のみ）",
-          v.imagesInternal,
-          "internal",
-        );
-
-        var grid =
-          '<div class="detail-grid">' +
-          di("自動車ナンバー", v.plateNumber) +
-          di("車種", v.carModel) +
-          di("車台番号", v.chassisNumber) +
-          di("ステータス", v.status) +
-          di("エリア", v.area) +
-          di("管理場所", v.storageLocation) +
-          di("貸出先", v.loanDest) +
-          di("使用者", v.user) +
-          di("所有者", v.owner) +
-          di("任意保険", v.insurance) +
-          di("レンタル料金", fmtPrice(v.price)) +
-          di("車検満了日", v.inspection) +
-          di("オイル交換日", v.oil) +
-          di("駆動方式", v.driveType) +
-          di("リモコンキー", v.remoteKey) +
-          di("スモークガラス", v.smokeGlass) +
-          di(
-            "仕入時走行距離",
-            v.mileageInitial
-              ? Number(v.mileageInitial).toLocaleString() + "km"
-              : "",
-          ) +
-          di(
-            "現走行距離",
-            v.mileageCurrent
-              ? Number(v.mileageCurrent).toLocaleString() + "km"
-              : "",
-          ) +
-          di("備考", v.note) +
-          "</div>";
-
-        var actions =
-          '<div class="detail-actions">' +
-          '<button class="action-btn btn-edit" onclick="enterEditMode()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>編集する</button>' +
-          '<button class="action-btn btn-delete" onclick="deleteVehicle(\'' +
-          (v.plateNumber || "").replace(/'/g, "\\'") +
-          '\')"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>削除</button>' +
-          "</div>";
-
-        document.getElementById("detailContent").innerHTML =
-          '<div class="detail-title"><h3>' +
-          (v.plateNumber || "-") +
-          '</h3><span class="badge ' +
-          bc(v.status) +
-          '">' +
-          (v.status || "-") +
-          "</span><p>" +
-          (v.carModel || "") +
-          " " +
-          (v.chassisNumber || "") +
-          "</p></div>" +
-          actions +
-          imgHtml +
-          grid;
-      }
-
-      function di(l, v) {
-        return (
-          '<div class="d-item"><div class="d-label">' +
-          l +
-          '</div><div class="d-value">' +
-          (v || "-") +
-          "</div></div>"
-        );
-      }
-
-      // ============================================================
-      // 詳細画面：編集モード
-      // ============================================================
-      function enterEditMode() {
-        if (!currentVehicle) return;
-        editMode = true;
-        var v = currentVehicle;
-        document.getElementById("detailHeaderTitle").textContent =
-          "車両情報を編集";
-
-        function ti(id, label, val, type) {
-          return (
-            '<div class="edit-item"><label>' +
-            label +
-            '</label><input type="' +
-            (type || "text") +
-            '" id="ed_' +
-            id +
-            '" value="' +
-            ea(val || "") +
-            '"></div>'
-          );
-        }
-        function si(id, label, opts, val) {
-          var h =
-            '<div class="edit-item"><label>' +
-            label +
-            '</label><select id="ed_' +
-            id +
-            '">';
-          opts.forEach(function (o) {
-            h +=
-              '<option value="' +
-              o +
-              '"' +
-              (o === val ? " selected" : "") +
-              ">" +
-              o +
-              "</option>";
-          });
-          return h + "</select></div>";
-        }
-        function sec(title) {
-          return '<div class="edit-section-title">' + title + "</div>";
-        }
-
-        var form =
-          '<div class="edit-grid">' +
-          sec("運用情報") +
-          ti("carModel", "車種", v.carModel) +
-          ti("chassisNumber", "車台番号", v.chassisNumber) +
-          si(
-            "status",
-            "状態",
-            [
-              "貸出中",
-              "販売可",
-              "販売済",
-              "貸出可",
-              "修理中",
-              "要修理",
-              "代車",
-              "事故廃車",
-              "故障廃車",
-              "その他",
-            ],
-            v.status,
-          ) +
-          si("area", "エリア", ["", "大阪", "名古屋", "東京"], v.area) +
-          si(
-            "storageLocation",
-            "管理場所",
-            ["", "場所A", "場所B", "場所C"],
-            v.storageLocation,
-          ) +
-          loanDestSelect(v.loanDest) +
-          ti("user", "使用者", v.user) +
-          sec("契約情報") +
-          si(
-            "owner",
-            "所有者",
-            ["株式会社TASK", "オリックス", "W-FINANCE(TASK)", "その他"],
-            v.owner,
-          ) +
-          si(
-            "insurance",
-            "任意保険",
-            [
-              "",
-              "保険なし",
-              "ソニー損保",
-              "東京海上日動",
-              "損保ジャパン",
-              "あいおい",
-              "西日本共済",
-              "その他",
-            ],
-            v.insurance,
-          ) +
-          ti("price", "レンタル料金", v.price, "number") +
-          sec("日付情報") +
-          ti("inspection", "車検満了日", v.inspection, "date") +
-          ti("oil", "オイル交換日", v.oil, "date") +
-          sec("車両スペック") +
-          si("driveType", "駆動方式", ["", "2WD", "4WD"], v.driveType) +
-          si("remoteKey", "リモコンキー", ["", "あり", "なし"], v.remoteKey) +
-          si(
-            "smokeGlass",
-            "スモークガラス",
-            ["", "あり", "なし"],
-            v.smokeGlass,
-          ) +
-          ti("mileageCurrent", "現走行距離（km）", v.mileageCurrent, "number") +
-          sec("備考") +
-          ti("note", "備考", v.note) +
-          "</div>";
-
-        // 編集モード内の画像管理
-        var imgEdit =
-          '<div style="margin-top:20px">' +
-          '<div class="edit-section-title">画像管理</div>' +
-          buildImageSection(
-            "公開画像（顧客にも表示）",
-            v.imagesPublic,
-            "public",
-          ) +
-          buildImageSection(
-            "社内画像（社内のみ）",
-            v.imagesInternal,
-            "internal",
-          ) +
-          "</div>";
-
-        var actions =
-          '<div class="detail-actions">' +
-          '<button class="action-btn btn-save-edit" onclick="saveEdit()"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>保存する</button>' +
-          '<button class="action-btn btn-cancel" onclick="cancelEdit()">キャンセル</button>' +
-          "</div>";
-
-        document.getElementById("detailContent").innerHTML =
-          '<div class="detail-title"><h3>' +
-          (v.plateNumber || "-") +
-          "</h3><p>編集中</p></div>" +
-          form +
-          imgEdit +
-          actions;
-      }
-
-      function ea(s) {
-        return String(s)
-          .replace(/&/g, "&amp;")
-          .replace(/"/g, "&quot;")
-          .replace(/</g, "&lt;");
-      }
-
-      // 貸出先ドロップダウン（取引先マスターから動的生成）
-      var clientsCache = [];
-      function loadClientsForDropdown() {
-        fetch(GAS_URL + '?action=clients&key=' + API_KEY)
-          .then(function(r) { return r.json(); })
-          .then(function(data) { if (Array.isArray(data)) clientsCache = data; })
-          .catch(function() {});
-      }
-      loadClientsForDropdown();
-
-      function loanDestSelect(currentVal) {
-        var opts = '<option value="">未設定</option>';
-        var found = false;
-        clientsCache.forEach(function(c) {
-          var sel = (c.companyName === currentVal) ? ' selected' : '';
-          if (sel) found = true;
-          opts += '<option value="' + ea(c.companyName) + '"' + sel + '>' + ea(c.companyName) + '</option>';
-        });
-        // 現在値がリストにない場合もoptionとして追加
-        if (currentVal && !found) {
-          opts += '<option value="' + ea(currentVal) + '" selected>' + ea(currentVal) + '</option>';
-        }
-        return '<div class="edit-item"><label>貸出先</label><select id="ed_loanDest" data-field="loanDest">' + opts + '</select></div>';
-      }
-
-      function cancelEdit() {
-        editMode = false;
-        document.getElementById("detailHeaderTitle").textContent =
-          "車両詳細情報";
-        renderViewMode(currentVehicle);
-      }
-
-      function saveEdit() {
-        if (!currentVehicle) return;
-        var fields = [
-          "carModel",
-          "chassisNumber",
-          "status",
-          "area",
-          "storageLocation",
-          "loanDest",
-          "user",
-          "owner",
-          "insurance",
-          "price",
-          "inspection",
-          "oil",
-          "driveType",
-          "remoteKey",
-          "smokeGlass",
-          "mileageCurrent",
-          "note",
-        ];
-        var changes = {};
-        fields.forEach(function (f) {
-          var el = document.getElementById("ed_" + f);
-          if (!el) return;
-          var newVal = el.value;
-          var oldVal = String(currentVehicle[f] || "");
-          if (newVal !== oldVal) changes[f] = newVal;
-        });
-
-        if (!Object.keys(changes).length) {
-          showToast("変更がありません");
-          return;
-        }
-
-        // 廃車ステータスへの変更時は確認ダイアログ
-        if (changes.status && (changes.status === '事故廃車' || changes.status === '故障廃車')) {
-          if (!confirm('「' + currentVehicle.plateNumber + '」を「' + changes.status + '」に変更しますか？\nスプレッドシートの行がグレーになります。')) return;
-        }
-
-        var body = {
-          action: "modifyVehicle",
-          key: API_KEY,
-          plate: currentVehicle.plateNumber,
-          changes: changes,
-          email: "",
-        };
-
-        fetch(GAS_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify(body),
-        })
-          .then(function (r) {
-            return r.json();
-          })
-          .then(function (data) {
-            if (data.error) {
-              showToast(data.error, true);
-            } else {
-              showToast("保存しました：" + currentVehicle.plateNumber);
-              // ローカルデータも更新
-              for (var k in changes) currentVehicle[k] = changes[k];
-              editMode = false;
-              document.getElementById("detailHeaderTitle").textContent =
-                "車両詳細情報";
-              renderViewMode(currentVehicle);
-              renderTable();
-            }
-          })
-          .catch(function (err) {
-            showToast("通信エラー：" + err.message, true);
-          });
-      }
-
-      // ============================================================
-      // 削除
-      // ============================================================
-      function deleteVehicle(plate) {
-        if (
-          !confirm(
-            "「" + plate + "」を削除しますか？\nこの操作は取り消せません。",
-          )
-        )
-          return;
-        fetch(GAS_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify({
-            action: "deleteVehicle",
-            key: API_KEY,
-            plate: plate,
-          }),
-        })
-          .then(function (r) {
-            return r.json();
-          })
-          .then(function (data) {
-            if (data.error) {
-              showToast(data.error, true);
-            } else {
-              showToast("削除しました");
-              document.getElementById("detailView").classList.add("hidden");
-              document.getElementById("listView").classList.remove("hidden");
-              fetchData();
-            }
-          })
-          .catch(function (err) {
-            showToast("通信エラー：" + err.message, true);
-          });
-      }
-
-      // ============================================================
-      // 画像セクション生成（公開/社内共通）
-      // ============================================================
-      function buildImageSection(title, images, type) {
-        var inputId = "imgUpload_" + type;
-        var statusId = "imgStatus_" + type;
-        var html =
-          '<div class="images-section"><div class="images-title">' +
-          title +
-          (images && images.length ? " (" + images.length + "枚)" : "") +
-          "</div>";
-        if (images && images.length > 0) {
-          html += '<div class="images-grid">';
-          images.forEach(function (img) {
-            var url = typeof img === "string" ? img : img.url;
-            var fid = typeof img === "object" ? img.fileId : "";
-            html +=
-              '<div class="img-wrap"><img src="' +
-              url +
-              '" onclick="window.open(\'' +
-              url +
-              "','_blank')\" title=\"クリックで拡大\">";
-            if (fid) {
-              html +=
-                '<button class="img-del-btn" onclick="event.stopPropagation();deleteImage(\'' +
-                fid +
-                "','" +
-                type +
-                "')\">×</button>";
-            }
-            html += "</div>";
-          });
-          html += "</div>";
-        } else {
-          html += '<div class="no-images">画像なし</div>';
-        }
-        html +=
-          '<div class="img-add-area"><button class="img-add-btn" onclick="document.getElementById(\'' +
-          inputId +
-          '\').click()">＋ 画像を追加</button><input type="file" id="' +
-          inputId +
-          '" multiple accept="image/jpeg,image/png,image/gif,image/webp" style="display:none" onchange="uploadImages(this.files,\'' +
-          type +
-          '\')"><div id="' +
-          statusId +
-          '"></div></div></div>';
-        return html;
-      }
-
-      // ============================================================
-      // 画像アップロード（type: 'public' or 'internal'）
-      // ============================================================
-      // 画像圧縮（最大800px、JPEG品質60%→高速アップロード優先）
-      function compressImage(file, callback) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-          var img = new Image();
-          img.onload = function() {
-            var MAX = 800;
-            var w = img.width, h = img.height;
-            if (w > MAX || h > MAX) {
-              if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-              else { w = Math.round(w * MAX / h); h = MAX; }
-            }
-            var canvas = document.createElement('canvas');
-            canvas.width = w; canvas.height = h;
-            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-            var compressed = canvas.toDataURL('image/jpeg', 0.6);
-            callback({ name: file.name.replace(/\.\w+$/, '.jpg'), base64: compressed });
-          };
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      }
-
-      // folderIdキャッシュ（2回目以降スプシ検索スキップ）
-      var folderIdCache = {};
-
-      function uploadImages(files, type) {
-        if (!currentVehicle || !files.length) return;
-        type = type || "public";
-        var status = document.getElementById("imgStatus_" + type);
-        var totalFiles = files.length;
-        status.textContent = "圧縮中...";
-
-        var compressed = [];
-        var compCount = 0;
-        Array.from(files).forEach(function(file) {
-          compressImage(file, function(result) {
-            compressed.push(result);
-            compCount++;
-            status.textContent = "圧縮中... (" + compCount + "/" + totalFiles + ")";
-            if (compCount === totalFiles) doUpload(compressed);
-          });
-        });
-
-        function doUpload(imgs) {
-          status.textContent = "アップロード中... (" + imgs.length + "枚)";
-          var cacheKey = currentVehicle.plateNumber + '_' + type;
-          var body = {
-            action: "uploadImage", key: API_KEY,
-            plate: currentVehicle.plateNumber, imageType: type, images: imgs,
-          };
-          if (folderIdCache[cacheKey]) body.folderId = folderIdCache[cacheKey];
-
-          fetch(GAS_URL, { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(body) })
-          .then(function(r) { return r.json(); })
-          .then(function(data) {
-            status.textContent = "";
-            if (data.error) { showToast(data.error, true); return; }
-            if (data.folderId) folderIdCache[cacheKey] = data.folderId;
-            showToast(data.uploaded + "枚アップロード完了");
-            var arrKey = type === "internal" ? "imagesInternal" : "imagesPublic";
-            if (data.images) {
-              if (!currentVehicle[arrKey]) currentVehicle[arrKey] = [];
-              data.images.forEach(function(img) { currentVehicle[arrKey].push(img); });
-            }
-            renderViewMode(currentVehicle);
-          })
-          .catch(function() { showToast("通信エラー", true); status.textContent = ""; });
-        }
-        document.getElementById("imgUpload_" + type).value = "";
-      }
-
-      // ============================================================
-      // 画像削除
-      // ============================================================
-      function deleteImage(fileId, type) {
-        if (!confirm("この画像を削除しますか？")) return;
-        fetch(GAS_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify({
-            action: "deleteImage",
-            key: API_KEY,
-            fileId: fileId,
-          }),
-        })
-          .then(function (r) {
-            return r.json();
-          })
-          .then(function (data) {
-            if (data.error) {
-              showToast(data.error, true);
-            } else {
-              showToast("画像を削除しました");
-              var arrKey =
-                type === "internal" ? "imagesInternal" : "imagesPublic";
-              if (currentVehicle[arrKey]) {
-                currentVehicle[arrKey] = currentVehicle[arrKey].filter(
-                  function (img) {
-                    return (
-                      (typeof img === "object" ? img.fileId : "") !== fileId
-                    );
-                  },
-                );
-              }
-              renderViewMode(currentVehicle);
-            }
-          })
-          .catch(function (err) {
-            showToast("通信エラー：" + err.message, true);
-          });
-      }
-
-      document
-        .getElementById("backButton")
-        .addEventListener("click", function () {
-          if (editMode && !confirm("編集中の内容は破棄されます。戻りますか？"))
-            return;
-          document.getElementById("detailView").classList.add("hidden");
-          document.getElementById("listView").classList.remove("hidden");
-        });
-
-      function showToast(msg, isError) {
-        var t = document.getElementById("toast");
-        t.textContent = msg;
-        t.className = "toast" + (isError ? " error" : "");
-        t.classList.add("show");
-        setTimeout(function () {
-          t.classList.remove("show");
-        }, 3000);
-      }
-
-      fetchData();
-    </script>
-  </body>
+fetchData();
+</script>
+</body>
 </html>
