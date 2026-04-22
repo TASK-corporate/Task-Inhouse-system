@@ -2,329 +2,235 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>車両登録 - 社用車管理システム</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>車両レンタル - 株式会社TASK</title>
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif; background:#f3f4f6; color:#111; min-height:100vh; }
-    .header { background:#fff; padding:16px; border-bottom:1px solid #d1d5db; position:sticky; top:0; z-index:10; }
-    .header-inner { max-width:720px; margin:0 auto; display:flex; align-items:center; gap:12px; }
-    .back-link { display:flex; align-items:center; gap:5px; color:#6b7280; text-decoration:none; font-size:13px; }
-    .back-link:hover { color:#000; }
-    .back-link svg { width:15px; height:15px; }
-    .header-sep { color:#d1d5db; font-size:13px; }
-    .header h1 { font-size:18px; font-weight:700; }
-    .container { max-width:720px; margin:0 auto; padding:24px 16px 80px; }
-    .form-section { background:#fff; border:1px solid #e5e7eb; margin-bottom:16px; }
-    .form-section-title { font-size:11px; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:.06em; padding:14px 20px 10px; border-bottom:1px solid #e5e7eb; }
-    .form-section-body { padding:16px 20px 20px; }
-    .form-row { display:flex; gap:12px; margin-bottom:14px; }
-    .form-row:last-child { margin-bottom:0; }
-    @media(max-width:600px) { .form-row { flex-direction:column; } }
-    .fg { display:flex; flex-direction:column; gap:5px; flex:1; min-width:0; }
-    .fg label { font-size:12px; font-weight:600; color:#6b7280; }
-    .fg label .req { color:#ef4444; margin-left:2px; }
-    .fg input, .fg select { padding:10px 12px; border:1.5px solid #d1d5db; font-size:14px; color:#111; width:100%; background:#fff; -webkit-appearance:none; }
-    .fg input:focus, .fg select:focus { outline:none; border-color:#111; }
-    .fg select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; padding-right:30px; cursor:pointer; }
-    .fg .hint { font-size:11px; color:#9ca3af; margin-top:2px; }
-    .image-upload-area { border:2px dashed #d1d5db; padding:24px; text-align:center; cursor:pointer; transition:border-color .2s; }
-    .image-upload-area:hover { border-color:#111; background:#f9fafb; }
-    .image-upload-area.dragover { border-color:#111; background:#f0f0f0; }
-    .image-upload-text { font-size:14px; color:#6b7280; }
-    .image-upload-sub { font-size:12px; color:#9ca3af; margin-top:4px; }
-    .image-upload-input { display:none; }
-    .image-preview-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:8px; margin-top:12px; }
-    .image-preview-item { position:relative; aspect-ratio:1; overflow:hidden; border:1px solid #e5e7eb; }
-    .image-preview-item img { width:100%; height:100%; object-fit:cover; }
-    .image-preview-del { position:absolute; top:4px; right:4px; width:22px; height:22px; background:rgba(0,0,0,.7); color:#fff; border:none; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-    .submit-area { padding:20px; background:#fff; border:1px solid #e5e7eb; }
-    .submit-btn { width:100%; padding:14px; background:#111; color:#fff; border:none; font-size:15px; font-weight:700; cursor:pointer; }
-    .submit-btn:hover { background:#333; }
-    .submit-btn:disabled { background:#9ca3af; cursor:not-allowed; }
-    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:#1e293b; color:#fff; padding:12px 24px; font-size:14px; font-weight:600; z-index:999; transition:transform .3s ease; pointer-events:none; }
-    .toast.show { transform:translateX(-50%) translateY(0); }
-    .toast.error { background:#dc2626; }
-    .loading-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,.8); z-index:100; align-items:center; justify-content:center; flex-direction:column; gap:12px; }
-    .loading-overlay.active { display:flex; }
-    .spinner { width:32px; height:32px; border:3px solid #e5e7eb; border-top-color:#111; border-radius:50%; animation:spin .7s linear infinite; }
-    @keyframes spin { to { transform:rotate(360deg); } }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Hiragino Sans','Helvetica Neue',Arial,sans-serif;background:#111;color:#fff;min-height:100vh;min-height:100dvh}
+    .header{background:#fff;color:#111;padding:20px 16px;border-bottom:3px solid #111;position:sticky;top:0;z-index:10}
+    .header-inner{max-width:480px;margin:0 auto}
+    .header h1{font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#111}
+    .header p{font-size:20px;font-weight:700;margin-top:4px;line-height:1.3}
+    .header-count{font-size:12px;color:#6b7280;margin-top:6px}
+    .search-wrap{max-width:480px;margin:0 auto;padding:12px 16px 0}
+    .search-input{width:100%;padding:10px 14px;border:2px solid #333;background:#1a1a1a;color:#fff;font-size:14px;-webkit-appearance:none;border-radius:0}
+    .search-input:focus{outline:none;border-color:#fff}
+    .search-input::placeholder{color:#6b7280}
+    .state-box{max-width:480px;margin:0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:16px}
+    .spinner{width:36px;height:36px;border:3px solid #333;border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .state-text{font-size:13px;color:#9ca3af}
+    .error-box{background:#fee2e2;color:#991b1b;padding:16px;margin:16px;text-align:center;font-size:14px}
+    .retry-btn{margin-top:12px;padding:8px 20px;background:#111;color:#fff;border:none;font-size:13px;font-weight:600;cursor:pointer}
+    .list{max-width:480px;margin:0 auto;padding:12px 16px 80px}
+    .card{background:#fff;color:#111;margin-bottom:12px;overflow:hidden;cursor:pointer;transition:transform .15s;position:relative}
+    .card:active{transform:scale(.98)}
+    .card.unavailable{opacity:.55}
+    .card-img{width:100%;height:200px;object-fit:cover;background:#e5e7eb;display:block}
+    .card-body{padding:16px}
+    .card-title{font-size:18px;font-weight:700;margin-bottom:12px}
+    .card-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .card-item{border-bottom:1px solid #e5e7eb;padding-bottom:8px}
+    .card-item.full{grid-column:span 2}
+    .card-label{font-size:11px;color:#6b7280;margin-bottom:2px}
+    .card-val{font-size:14px;font-weight:600}
+    .badge{display:inline-block;padding:3px 10px;font-size:11px;font-weight:600;color:#fff}
+    .badge-ok{background:#059669}
+    .badge-sale{background:#059669}
+    .badge-inuse{background:#d97706}
+    .badge-ng{background:#6b7280}
+    .unavailable-label{position:absolute;top:12px;right:12px;background:rgba(0,0,0,.75);color:#fff;font-size:11px;font-weight:600;padding:4px 10px;z-index:2}
+    .detail{position:fixed;top:0;left:0;right:0;bottom:0;background:#111;z-index:100;overflow-y:auto;display:none}
+    .detail.active{display:block}
+    .detail-inner{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh}
+    .detail-header{background:#fff;color:#111;position:sticky;top:0;z-index:10;border-bottom:2px solid #111}
+    .detail-header-inner{padding:12px 16px;display:flex;align-items:center;gap:10px}
+    .back-btn{padding:8px;background:none;border:none;cursor:pointer;color:#111}
+    .back-btn svg{width:20px;height:20px}
+    .detail-header h2{font-size:16px;font-weight:700}
+    .detail-content{background:#fff;color:#111;margin:12px}
+    .gallery{background:#000;position:relative}
+    .main-img-wrap{width:100%;height:300px;position:relative}
+    .main-img{width:100%;height:100%;object-fit:contain;background:#000;display:block}
+    .img-counter{position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,.7);color:#fff;padding:3px 10px;font-size:11px;font-weight:600}
+    .img-nav{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;background:rgba(0,0,0,.5);color:#fff;border:none;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .img-nav:hover{background:rgba(0,0,0,.8)}
+    .img-nav.prev{left:8px}
+    .img-nav.next{right:8px}
+    .thumb-row{display:flex;gap:6px;padding:8px;background:#1a1a1a;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .thumb{width:56px;height:56px;flex-shrink:0;border:2px solid transparent;overflow:hidden;cursor:pointer}
+    .thumb.active{border-color:#fff}
+    .thumb img{width:100%;height:100%;object-fit:cover}
+    .no-img{width:100%;height:200px;background:#e5e7eb;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:14px}
+    .detail-info{padding:20px}
+    .detail-title{font-size:22px;font-weight:700;margin-bottom:16px}
+    .detail-list{display:flex;flex-direction:column;gap:14px}
+    .d-item{border-bottom:1px solid #e5e7eb;padding-bottom:10px}
+    .d-label{font-size:12px;color:#6b7280;margin-bottom:3px}
+    .d-value{font-size:16px;font-weight:600}
+    .contact-btn{width:100%;padding:14px;font-size:15px;font-weight:700;border:none;cursor:pointer;margin-top:20px;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .2s}
+    .contact-btn.line{background:#06C755;color:#fff}
+    .contact-btn.line:active{background:#05a648}
+    .contact-btn:disabled{background:#9ca3af;cursor:not-allowed}
+    .empty-msg{text-align:center;padding:40px 16px;color:#6b7280;font-size:14px}
+    @media(max-width:380px){.card-img{height:160px}.main-img-wrap{height:240px}.card-title{font-size:16px}}
   </style>
   <script src="../config.js"></script>
-  <script src="../auth.js"></script>
 </head>
 <body>
-<div class="header">
-  <div class="header-inner">
-    <a href="index.html" class="back-link">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-      車両一覧
-    </a>
-    <span class="header-sep">/</span>
-    <h1>車両登録</h1>
+<div id="listView">
+  <div class="header"><div class="header-inner">
+    <h1>TASK Car Rental</h1>
+    <p>法人向け車両レンタルサービス</p>
+    <div class="header-count" id="vehicleCount"></div>
+  </div></div>
+  <div class="search-wrap">
+    <input type="text" class="search-input" id="searchInput" placeholder="車種・エリアで検索..." oninput="filterAndRender()">
+  </div>
+  <div class="state-box" id="loadingState"><div class="spinner"></div><div class="state-text">車両情報を読み込んでいます...</div></div>
+  <div class="error-box" id="errorState" style="display:none"><p id="errorMsg">読み込みに失敗しました</p><button class="retry-btn" onclick="fetchData()">再試行</button></div>
+  <div class="list" id="vehicleList" style="display:none"></div>
+</div>
+<div class="detail" id="detailView">
+  <div class="detail-inner">
+    <div class="detail-header"><div class="detail-header-inner">
+      <button class="back-btn" id="backBtn"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+      <h2>車両詳細</h2>
+    </div></div>
+    <div class="detail-content" id="detailContent"></div>
   </div>
 </div>
-<div class="container">
-  <!-- 識別情報 -->
-  <div class="form-section">
-    <div class="form-section-title">識別情報</div>
-    <div class="form-section-body">
-      <div class="form-row">
-        <div class="fg"><label>自動車ナンバー <span class="req">*</span></label><input type="text" id="fPlate" placeholder="例）大阪 300 あ 1234"></div>
-        <div class="fg"><label>車種 <span class="req">*</span></label><input type="text" id="fCarModel" placeholder="例）ハイエース"></div>
-      </div>
-      <div class="form-row">
-        <div class="fg"><label>車台番号</label><input type="text" id="fChassis" placeholder="例）ZH30-0012345"></div>
-      </div>
-    </div>
-  </div>
-  <!-- 運用情報 -->
-  <div class="form-section">
-    <div class="form-section-title">運用情報</div>
-    <div class="form-section-body">
-      <div class="form-row">
-        <div class="fg"><label>状態 <span class="req">*</span></label>
-          <select id="fStatus"><option value="">選択</option><option value="貸出中">貸出中</option><option value="貸出可">貸出可</option><option value="販売可">販売可</option><option value="販売済">販売済</option><option value="修理中">修理中</option><option value="要修理">要修理</option><option value="代車">代車</option><option value="事故廃車">事故廃車</option><option value="故障廃車">故障廃車</option><option value="その他">その他</option></select>
-        </div>
-        <div class="fg"><label>エリア <span class="req">*</span></label>
-          <select id="fAreaSelect" onchange="if(this.value==='__custom__'){document.getElementById('fAreaCustom').style.display='';this.style.display='none';document.getElementById('fAreaCustom').focus();}"><option value="">選択</option><option value="大阪">大阪</option><option value="名古屋">名古屋</option><option value="東京">東京</option><option value="__custom__">＋ 自由入力</option></select>
-          <input type="text" id="fAreaCustom" placeholder="エリア名を入力" style="display:none;margin-top:4px">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="fg"><label>管理場所</label>
-          <select id="fStorageSelect" onchange="if(this.value==='__custom__'){document.getElementById('fStorageCustom').style.display='';this.style.display='none';document.getElementById('fStorageCustom').focus();}"><option value="">選択</option><option value="場所A">場所A</option><option value="場所B">場所B</option><option value="場所C">場所C</option><option value="__custom__">＋ 自由入力</option></select>
-          <input type="text" id="fStorageCustom" placeholder="場所名を入力" style="display:none;margin-top:4px">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="fg"><label>貸出先</label><select id="fLoanDest"><option value="">選択</option></select></div>
-        <div class="fg"><label>使用者</label><input type="text" id="fUser" placeholder="ドライバー名"></div>
-      </div>
-    </div>
-  </div>
-  <!-- 契約情報 -->
-  <div class="form-section">
-    <div class="form-section-title">契約情報</div>
-    <div class="form-section-body">
-      <div class="form-row">
-        <div class="fg"><label>所有者 <span class="req">*</span></label>
-          <select id="fOwner"><option value="">選択</option><option value="TASK">TASK</option><option value="オリックス">オリックス</option><option value="その他">その他</option></select>
-        </div>
-        <div class="fg"><label>任意保険</label>
-          <select id="fInsurance"><option value="">選択</option><option value="無保険">無保険</option><option value="ソニー損保">ソニー損保</option><option value="東京海上日動">東京海上日動</option><option value="その他">その他</option></select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="fg"><label>レンタル料金</label><input type="number" id="fPrice" placeholder="数字のみ（例：15000）"><div class="hint">数字のみ。表示は「〇円/月」</div></div>
-      </div>
-    </div>
-  </div>
-  <!-- 日付情報 -->
-  <div class="form-section">
-    <div class="form-section-title">日付情報</div>
-    <div class="form-section-body">
-      <div class="form-row">
-        <div class="fg"><label>車検満了日</label><input type="date" id="fInspection"></div>
-        <div class="fg"><label>オイル交換日</label><input type="date" id="fOil"></div>
-      </div>
-    </div>
-  </div>
-  <!-- 車両スペック -->
-  <div class="form-section">
-    <div class="form-section-title">車両スペック</div>
-    <div class="form-section-body">
-      <div class="form-row">
-        <div class="fg"><label>駆動方式</label>
-          <select id="fDriveType"><option value="">選択</option><option value="2WD">2WD</option><option value="4WD">4WD</option></select>
-        </div>
-        <div class="fg"><label>リモコンキー</label>
-          <select id="fRemoteKey"><option value="">選択</option><option value="あり">あり</option><option value="なし">なし</option></select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="fg"><label>後部スモークガラス</label>
-          <select id="fSmokeGlass"><option value="">選択</option><option value="あり">あり</option><option value="なし">なし</option></select>
-        </div>
-        <div class="fg"><label>仕入時走行距離</label><input type="number" id="fMileageInitial" placeholder="km"><div class="hint">仕入時の走行距離（km）</div></div>
-      </div>
-    </div>
-  </div>
-  <!-- 備考 -->
-  <div class="form-section">
-    <div class="form-section-title">備考</div>
-    <div class="form-section-body">
-      <div class="form-row">
-        <div class="fg"><label>備考</label><input type="text" id="fNote" placeholder="任意のメモ"></div>
-      </div>
-    </div>
-  </div>
-  <!-- 画像 -->
-  <div class="form-section">
-    <div class="form-section-title">公開画像（顧客にも表示・最大30枚）</div>
-    <div class="form-section-body">
-      <div class="image-upload-area" id="dropZonePublic">
-        <div class="image-upload-text">タップまたはドラッグで画像を追加</div>
-        <div class="image-upload-sub">JPG, PNG, GIF, WebP（各5MBまで）</div>
-        <input type="file" class="image-upload-input" id="imageInputPublic" multiple accept="image/jpeg,image/png,image/gif,image/webp">
-      </div>
-      <div class="image-preview-grid" id="imagePreviewPublic"></div>
-    </div>
-  </div>
-  <div class="form-section">
-    <div class="form-section-title">社内画像（社内のみ表示・最大20枚）</div>
-    <div class="form-section-body">
-      <div class="image-upload-area" id="dropZoneInternal">
-        <div class="image-upload-text">タップまたはドラッグで画像を追加</div>
-        <div class="image-upload-sub">JPG, PNG, GIF, WebP（各5MBまで）</div>
-        <input type="file" class="image-upload-input" id="imageInputInternal" multiple accept="image/jpeg,image/png,image/gif,image/webp">
-      </div>
-      <div class="image-preview-grid" id="imagePreviewInternal"></div>
-    </div>
-  </div>
-  <div class="submit-area">
-    <button class="submit-btn" id="submitBtn" onclick="submitForm()">車両を登録する</button>
-  </div>
-</div>
-<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><div style="font-size:14px;color:#6b7280;">登録中...</div></div>
-<div class="toast" id="toast"></div>
 <script>
-var GAS_URL = APP_CONFIG.GAS_URL;
-var API_KEY = APP_CONFIG.API_KEY_EMPLOYEE;
-var imageFilesPublic = [];
-var imageFilesInternal = [];
+var GAS_URL=APP_CONFIG.GAS_URL,API_KEY=APP_CONFIG.API_KEY_CLIENT,vehicles=[],currentImgIdx=0,currentVehicle=null;
 
-// 取引先リストを貸出先ドロップダウンに読み込み
-(function(){
-  fetch(GAS_URL+'?action=clients&key='+API_KEY)
+function fetchData(){
+  document.getElementById('loadingState').style.display='flex';
+  document.getElementById('errorState').style.display='none';
+  document.getElementById('vehicleList').style.display='none';
+  fetch(GAS_URL+'?role=client&key='+API_KEY)
     .then(function(r){return r.json();})
-    .then(function(data){
-      if(!Array.isArray(data))return;
-      var sel=document.getElementById('fLoanDest');
-      data.forEach(function(c){
-        sel.innerHTML+='<option value="'+c.companyName+'">'+c.companyName+'</option>';
-      });
-    }).catch(function(){});
-})();
-
-// 公開画像
-var dropZonePublic = document.getElementById('dropZonePublic');
-var imageInputPublic = document.getElementById('imageInputPublic');
-dropZonePublic.addEventListener('click', function() { imageInputPublic.click(); });
-dropZonePublic.addEventListener('dragover', function(e) { e.preventDefault(); dropZonePublic.classList.add('dragover'); });
-dropZonePublic.addEventListener('dragleave', function() { dropZonePublic.classList.remove('dragover'); });
-dropZonePublic.addEventListener('drop', function(e) { e.preventDefault(); dropZonePublic.classList.remove('dragover'); handleFiles(e.dataTransfer.files,'public'); });
-imageInputPublic.addEventListener('change', function() { var f=Array.from(this.files); this.value=''; handleFiles(f,'public'); });
-
-// 社内画像
-var dropZoneInternal = document.getElementById('dropZoneInternal');
-var imageInputInternal = document.getElementById('imageInputInternal');
-dropZoneInternal.addEventListener('click', function() { imageInputInternal.click(); });
-dropZoneInternal.addEventListener('dragover', function(e) { e.preventDefault(); dropZoneInternal.classList.add('dragover'); });
-dropZoneInternal.addEventListener('dragleave', function() { dropZoneInternal.classList.remove('dragover'); });
-dropZoneInternal.addEventListener('drop', function(e) { e.preventDefault(); dropZoneInternal.classList.remove('dragover'); handleFiles(e.dataTransfer.files,'internal'); });
-imageInputInternal.addEventListener('change', function() { var f=Array.from(this.files); this.value=''; handleFiles(f,'internal'); });
-
-// 画像圧縮（最大800px、JPEG品質60%→高速化）
-function compressImage(file,callback){
-  var img=new Image();
-  var url=URL.createObjectURL(file);
-  img.onload=function(){
-    URL.revokeObjectURL(url);
-    var MAX=800,w=img.width,h=img.height;
-    if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
-    var c=document.createElement('canvas');c.width=w;c.height=h;
-    c.getContext('2d').drawImage(img,0,0,w,h);
-    callback({name:file.name.replace(/\.\w+$/,'.jpg'),base64:c.toDataURL('image/jpeg',0.6)});
-  };
-  img.onerror=function(){
-    URL.revokeObjectURL(url);
-    var reader=new FileReader();
-    reader.onload=function(e){callback({name:file.name,base64:e.target.result});};
-    reader.readAsDataURL(file);
-  };
-  img.src=url;
-}
-
-function handleFiles(files, type) {
-  var arr = type==='internal' ? imageFilesInternal : imageFilesPublic;
-  var rem = (type==="internal"?20:30) - arr.length;
-  if (rem <= 0) { showToast('画像は上限に達しています',true); return; }
-  Array.from(files).slice(0,rem).forEach(function(file) {
-    if (file.size > 5*1024*1024) { showToast(file.name+' は5MBを超えています',true); return; }
-    compressImage(file, function(result) { arr.push(result); renderPreviews(type); });
-  });
-}
-function renderPreviews(type) {
-  var arr = type==='internal' ? imageFilesInternal : imageFilesPublic;
-  var elId = type==='internal' ? 'imagePreviewInternal' : 'imagePreviewPublic';
-  document.getElementById(elId).innerHTML = arr.map(function(img,i) {
-    return '<div class="image-preview-item"><img src="'+img.base64+'" alt="'+img.name+'"><button class="image-preview-del" onclick="removeImg('+i+',\''+type+'\')">×</button></div>';
-  }).join('');
-}
-function removeImg(idx, type) {
-  if (type==='internal') { imageFilesInternal.splice(idx,1); renderPreviews('internal'); }
-  else { imageFilesPublic.splice(idx,1); renderPreviews('public'); }
-}
-
-function submitForm() {
-  var plate=document.getElementById('fPlate').value.trim();
-  var carModel=document.getElementById('fCarModel').value.trim();
-  var owner=document.getElementById('fOwner').value;
-  var status=document.getElementById('fStatus').value;
-  var area=document.getElementById('fAreaCustom').style.display!=='none'?document.getElementById('fAreaCustom').value.trim():document.getElementById('fAreaSelect').value;
-  if (!plate) { showToast('自動車ナンバーを入力してください',true); return; }
-  if (!carModel) { showToast('車種を入力してください',true); return; }
-  if (!owner) { showToast('所有者を選択してください',true); return; }
-  if (!status) { showToast('状態を選択してください',true); return; }
-  if (!area) { showToast('エリアを入力してください',true); return; }
-
-  var storageVal=document.getElementById('fStorageCustom').style.display!=='none'?document.getElementById('fStorageCustom').value.trim():document.getElementById('fStorageSelect').value;
-  var body = {
-    action:'registerVehicle', key:API_KEY,
-    plate:plate, carModel:carModel,
-    chassis: document.getElementById('fChassis').value.trim(),
-    status:status, area:area,
-    storageLocation: storageVal,
-    loanDest: document.getElementById('fLoanDest').value.trim(),
-    user: document.getElementById('fUser').value.trim(),
-    owner:owner,
-    insurance: document.getElementById('fInsurance').value,
-    price: document.getElementById('fPrice').value.trim(),
-    inspection: document.getElementById('fInspection').value,
-    oil: document.getElementById('fOil').value,
-    driveType: document.getElementById('fDriveType').value,
-    remoteKey: document.getElementById('fRemoteKey').value,
-    smokeGlass: document.getElementById('fSmokeGlass').value,
-    mileageInitial: document.getElementById('fMileageInitial').value.trim(),
-    note: document.getElementById('fNote').value.trim(),
-    images: imageFilesPublic.map(function(img) { return {name:img.name,base64:img.base64}; }),
-    imagesInternal: imageFilesInternal.map(function(img) { return {name:img.name,base64:img.base64}; })
-  };
-
-  document.getElementById('submitBtn').disabled = true;
-  document.getElementById('loadingOverlay').classList.add('active');
-
-  fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(body) })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      document.getElementById('loadingOverlay').classList.remove('active');
-      document.getElementById('submitBtn').disabled = false;
-      if (data.error) showToast(data.error,true);
-      else { showToast('登録完了：'+plate); setTimeout(function(){window.location.href='index.html';},1500); }
+    .then(function(d){
+      if(!Array.isArray(d)||d.length===0)throw new Error('車両データがありません');
+      vehicles=d;
+      document.getElementById('loadingState').style.display='none';
+      document.getElementById('vehicleList').style.display='block';
+      filterAndRender();
     })
-    .catch(function(err) {
-      document.getElementById('loadingOverlay').classList.remove('active');
-      document.getElementById('submitBtn').disabled = false;
-      showToast('通信エラー：'+err.message,true);
+    .catch(function(err){
+      document.getElementById('loadingState').style.display='none';
+      document.getElementById('errorState').style.display='block';
+      document.getElementById('errorMsg').textContent=err.message||'通信エラー';
     });
 }
 
-function showToast(msg,isError) {
-  var t=document.getElementById('toast'); t.textContent=msg;
-  t.className='toast'+(isError?' error':''); t.classList.add('show');
-  setTimeout(function(){t.classList.remove('show');},3000);
+function filterAndRender(){
+  var kw=(document.getElementById('searchInput').value||'').trim().toLowerCase();
+  var list=vehicles;
+  if(kw){list=list.filter(function(v){return(v.carModel||'').toLowerCase().indexOf(kw)!==-1||(v.area||'').toLowerCase().indexOf(kw)!==-1||(v.driveType||'').toLowerCase().indexOf(kw)!==-1;});}
+  var statusOrder={'販売可':0,'貸出可':1,'貸出中':2,'貸出不可':3};
+  list.sort(function(a,b){return (statusOrder[a.status]||3)-(statusOrder[b.status]||3);});
+  document.getElementById('vehicleCount').textContent=kw?list.length+'台 / 全'+vehicles.length+'台':'全'+vehicles.length+'台';
+  if(!list.length){document.getElementById('vehicleList').innerHTML='<div class="empty-msg">条件に一致する車両がありません</div>';return;}
+  var html='';
+  list.forEach(function(v){
+    var ok=v.status==='貸出可'||v.status==='販売可';
+    var badgeCls=v.status==='販売可'?'badge-sale':v.status==='貸出可'?'badge-ok':v.status==='貸出中'?'badge-inuse':'badge-ng';
+    var img=getFirstImg(v);
+    html+='<div class="card'+(ok?'':v.status==='貸出中'?' unavailable':' unavailable')+'" onclick="showDetail('+v.id+')">'
+      +(ok?'':'<div class="unavailable-label">'+v.status+'</div>')
+      +'<img src="'+img+'" class="card-img" alt="'+esc(v.carModel||'')+'" onerror="this.src=\'https://placehold.co/400x200/e5e7eb/9ca3af?text=No+Image\'">'
+      +'<div class="card-body"><div class="card-title">'+esc(v.carModel||'車種不明')+'</div><div class="card-grid">'
+      +ci('価格',v.price?v.price.toLocaleString()+'円/月':'未設定')
+      +ci('ステータス','<span class="badge '+badgeCls+'">'+v.status+'</span>')
+      +ci('駆動方式',v.driveType||'-')
+      +ci('スモークガラス',v.smokeGlass||'-')
+      +ci('エリア',v.area||'-',true)
+      +ci('車検満了日',v.inspection||'-',true)
+      +'</div></div></div>';
+  });
+  document.getElementById('vehicleList').innerHTML=html;
 }
+function ci(l,val,full){return '<div class="card-item'+(full?' full':'')+'"><div class="card-label">'+l+'</div><div class="card-val">'+val+'</div></div>';}
+function getFirstImg(v){if(v.images&&v.images.length>0){var u=typeof v.images[0]==='object'?v.images[0].url:v.images[0];if(u&&u.indexOf('placehold')===-1)return u;}return'https://placehold.co/400x200/e5e7eb/9ca3af?text=No+Image';}
+
+function showDetail(id){
+  var v=vehicles.find(function(x){return x.id===id;});
+  if(!v)return;
+  currentVehicle=v;currentImgIdx=0;
+  var ok=v.status==='貸出可'||v.status==='販売可';
+  var badgeCls=v.status==='販売可'?'badge-sale':v.status==='貸出可'?'badge-ok':v.status==='貸出中'?'badge-inuse':'badge-ng';
+  var imgs=(v.images||[]).filter(function(img){var u=typeof img==='object'?img.url:img;return u&&u.indexOf('placehold')===-1;});
+  var gHtml='';
+  if(imgs.length>0){
+    var firstUrl=typeof imgs[0]==='object'?imgs[0].url:imgs[0];
+    gHtml='<div class="gallery"><div class="main-img-wrap"><img id="mainImg" src="'+firstUrl+'" class="main-img"><div class="img-counter"><span id="imgNum">1</span> / '+imgs.length+'</div>';
+    if(imgs.length>1)gHtml+='<button class="img-nav prev" onclick="navImg(-1)">‹</button><button class="img-nav next" onclick="navImg(1)">›</button>';
+    gHtml+='</div>';
+    if(imgs.length>1){gHtml+='<div class="thumb-row">';imgs.forEach(function(img,i){var u=typeof img==='object'?img.url:img;gHtml+='<div class="thumb'+(i===0?' active':'')+'" onclick="goImg('+i+')"><img src="'+u+'"></div>';});gHtml+='</div>';}
+    gHtml+='</div>';
+  }else{gHtml='<div class="no-img">画像なし</div>';}
+
+  var info='<div class="detail-info"><h1 class="detail-title">'+esc(v.carModel||'車種不明')+'</h1><div class="detail-list">'
+    +di('価格',v.price?v.price.toLocaleString()+'円/月':'未設定')
+    +di('ステータス','<span class="badge '+badgeCls+'">'+v.status+'</span>')
+    +di('エリア',v.area||'-')
+    +di('車検満了日',v.inspection||'-')
+    +di('駆動方式',v.driveType||'-')
+    +di('スモークガラス',v.smokeGlass||'-')
+    +'</div>';
+  if(ok)info+='<button class="contact-btn line" onclick="contact(\''+esc(v.carModel||'')+'\')">'
+    +'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>'
+    +'LINEで予約する</button>';
+  else info+='<button class="contact-btn" disabled>現在貸出できません</button>';
+  info+='</div>';
+  document.getElementById('detailContent').innerHTML=gHtml+info;
+  document.getElementById('detailView').classList.add('active');
+}
+function di(l,val){return '<div class="d-item"><div class="d-label">'+l+'</div><div class="d-value">'+val+'</div></div>';}
+
+function navImg(dir){
+  if(!currentVehicle||!currentVehicle.images)return;
+  var imgs=currentVehicle.images.filter(function(img){var u=typeof img==='object'?img.url:img;return u&&u.indexOf('placehold')===-1;});
+  if(!imgs.length)return;
+  currentImgIdx=(currentImgIdx+dir+imgs.length)%imgs.length;
+  updateImg(imgs);
+}
+function goImg(i){
+  if(!currentVehicle||!currentVehicle.images)return;
+  var imgs=currentVehicle.images.filter(function(img){var u=typeof img==='object'?img.url:img;return u&&u.indexOf('placehold')===-1;});
+  currentImgIdx=i;updateImg(imgs);
+}
+function updateImg(imgs){
+  var u=typeof imgs[currentImgIdx]==='object'?imgs[currentImgIdx].url:imgs[currentImgIdx];
+  document.getElementById('mainImg').src=u;
+  document.getElementById('imgNum').textContent=currentImgIdx+1;
+  document.querySelectorAll('.thumb').forEach(function(t,j){t.classList.toggle('active',j===currentImgIdx);});
+  var at=document.querySelectorAll('.thumb')[currentImgIdx];
+  if(at)at.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
+}
+
+function contact(model){
+  var text='【車両予約希望】\n車種: '+model+'\n\nこちらの車両の予約を希望します。';
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(function(){alert('予約内容をコピーしました。\nLINEの画面で貼り付けて送信してください。');}).catch(function(){fallbackCopy(text);});}
+  else{fallbackCopy(text);}
+}
+function fallbackCopy(text){
+  var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.left='-9999px';document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');alert('予約内容をコピーしました。\nLINEの画面で貼り付けて送信してください。');}catch(e){alert('こちらをLINEで送信してください:\n\n'+text);}
+  document.body.removeChild(ta);
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/'/g,'&#39;');}
+
+document.getElementById('backBtn').addEventListener('click',function(){document.getElementById('detailView').classList.remove('active');});
+
+// スワイプで画像切替
+(function(){var sx=0,g=null;
+  document.addEventListener('touchstart',function(e){g=e.target.closest('.gallery');if(g)sx=e.touches[0].clientX;},{passive:true});
+  document.addEventListener('touchend',function(e){if(!g)return;var d=e.changedTouches[0].clientX-sx;if(Math.abs(d)>50)navImg(d>0?-1:1);g=null;},{passive:true});
+})();
+
+fetchData();
 </script>
 </body>
 </html>
