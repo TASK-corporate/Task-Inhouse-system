@@ -38,6 +38,9 @@
     .image-preview-item { position:relative; aspect-ratio:1; overflow:hidden; border:1px solid #e5e7eb; }
     .image-preview-item img { width:100%; height:100%; object-fit:cover; }
     .image-preview-del { position:absolute; top:4px; right:4px; width:22px; height:22px; background:rgba(0,0,0,.7); color:#fff; border:none; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .img-move { position:absolute; top:4px; left:4px; display:flex; gap:2px; }
+    .img-move-btn { width:22px; height:22px; background:rgba(0,0,0,.65); color:#fff; border:none; font-size:11px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .img-move-btn:disabled { opacity:.3; cursor:default; }
     .img-pos-label { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,.7); color:#fff; font-size:10px; font-weight:600; text-align:center; padding:3px 0; pointer-events:none; }
     .submit-area { padding:20px; background:#fff; border:1px solid #e5e7eb; }
     .submit-btn { width:100%; padding:14px; background:#111; color:#fff; border:none; font-size:15px; font-weight:700; cursor:pointer; }
@@ -129,6 +132,16 @@
         <div class="fg"><label>車検満了日</label><input type="date" id="fInspection"></div>
         <div class="fg"><label>オイル交換日</label><input type="date" id="fOil"></div>
       </div>
+      <div class="form-row">
+        <div class="fg"><label>年式（初年度検査年月）</label>
+          <div style="display:flex; gap:8px;">
+            <select id="fEra" style="flex:0 0 84px;"><option value="令和">令和</option><option value="平成">平成</option><option value="昭和">昭和</option></select>
+            <input type="number" id="fEraYear" placeholder="年" min="1" style="flex:1;">
+            <select id="fEraMonth" style="flex:0 0 84px;"><option value="">月</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option></select>
+          </div>
+          <div class="hint">車検証の「初年度検査年月」を和暦で入力（例：令和3年5月）</div>
+        </div>
+      </div>
     </div>
   </div>
   <!-- 車両スペック -->
@@ -195,6 +208,15 @@ var API_KEY = APP_CONFIG.API_KEY_EMPLOYEE;
 var imageFilesPublic = [];
 var imageFilesInternal = [];
 
+// 和暦（年式）：元号+年+月 → "令和3年5月" 形式の文字列を生成
+function buildWareki(era, year, month) {
+  year = String(year || '').trim();
+  if (!year) return '';
+  var s = (era || '令和') + year + '年';
+  if (month) s += month + '月';
+  return s;
+}
+
 // 取引先リストを貸出先ドロップダウンに読み込み
 (function(){
   fetch(GAS_URL+'?action=clients&key='+API_KEY)
@@ -260,12 +282,24 @@ function renderPreviews(type) {
   var arr = type==='internal' ? imageFilesInternal : imageFilesPublic;
   var elId = type==='internal' ? 'imagePreviewInternal' : 'imagePreviewPublic';
   var posLabels = type==='public' ? ['1枚目：前','2枚目：横','3枚目：ななめ'] : [];
+  var n = arr.length;
   document.getElementById(elId).innerHTML = arr.map(function(img,i) {
     var label = posLabels[i] || (type==='public' && i>=3 ? (i+1)+'枚目' : '');
     return '<div class="image-preview-item"><img src="'+img.base64+'" alt="'+img.name+'">'
       +(label ? '<span class="img-pos-label">'+label+'</span>' : '')
+      +'<div class="img-move">'
+        +'<button class="img-move-btn"'+(i===0?' disabled':'')+' onclick="moveImg('+i+',-1,\''+type+'\')">◀</button>'
+        +'<button class="img-move-btn"'+(i===n-1?' disabled':'')+' onclick="moveImg('+i+',1,\''+type+'\')">▶</button>'
+      +'</div>'
       +'<button class="image-preview-del" onclick="removeImg('+i+',\''+type+'\')">×</button></div>';
   }).join('');
+}
+function moveImg(idx, dir, type) {
+  var arr = type==='internal' ? imageFilesInternal : imageFilesPublic;
+  var j = idx + dir;
+  if (j < 0 || j >= arr.length) return;
+  var t = arr[idx]; arr[idx] = arr[j]; arr[j] = t;
+  renderPreviews(type);
 }
 function removeImg(idx, type) {
   if (type==='internal') { imageFilesInternal.splice(idx,1); renderPreviews('internal'); }
@@ -298,6 +332,7 @@ function submitForm() {
     price: document.getElementById('fPrice').value.trim(),
     inspection: document.getElementById('fInspection').value,
     oil: document.getElementById('fOil').value,
+    modelYear: buildWareki(document.getElementById('fEra').value, document.getElementById('fEraYear').value, document.getElementById('fEraMonth').value),
     driveType: document.getElementById('fDriveType').value,
     remoteKey: document.getElementById('fRemoteKey').value,
     smokeGlass: document.getElementById('fSmokeGlass').value,
