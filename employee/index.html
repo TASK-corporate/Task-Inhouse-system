@@ -732,6 +732,7 @@
               <th>料金</th>
               <th>車検満了日</th>
               <th>オイル交換日</th>
+              <th>年式</th>
               <th>駆動方式</th>
               <th>リモコンキー</th>
               <th>スモークガラス</th>
@@ -875,6 +876,9 @@
             (v.oil || "-") +
             "</td>" +
             "<td>" +
+            (v.modelYear || "-") +
+            "</td>" +
+            "<td>" +
             (v.driveType || "-") +
             "</td>" +
             "<td>" +
@@ -967,7 +971,7 @@
             tr.id = "noResultRow";
             tr.className = "no-result-row";
             tr.innerHTML =
-              '<td colspan="19">条件に一致する車両がありません</td>';
+              '<td colspan="20">条件に一致する車両がありません</td>';
             document.getElementById("vehicleTable").appendChild(tr);
           }
         } else {
