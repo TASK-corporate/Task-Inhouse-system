@@ -47,6 +47,7 @@ const COL = {
   PRICE:           'レンタル料金',
   INSPECTION:      '車検満了日',
   OIL:             'オイル交換日',
+  MODEL_YEAR:      '年式',
   DRIVE_TYPE:      '駆動方式',
   REMOTE_KEY:      'リモコンキー',
   SMOKE_GLASS:     'スモークガラス',
@@ -72,6 +73,7 @@ const FIELD_TO_COL = {
   price:           COL.PRICE,
   inspection:      COL.INSPECTION,
   oil:             COL.OIL,
+  modelYear:       COL.MODEL_YEAR,
   driveType:       COL.DRIVE_TYPE,
   remoteKey:       COL.REMOTE_KEY,
   smokeGlass:      COL.SMOKE_GLASS,
@@ -139,6 +141,7 @@ function doPost(e) {
     if (action === 'applyAccess')     return _applyAccess(body);
     if (action === 'uploadImage')     return _uploadImage(body);
     if (action === 'deleteImage')     return _deleteImage(body);
+    if (action === 'reorderImages')   return _reorderImages(body);
     if (action === 'checkAuthByPassword') return _checkAuthByPassword(body);
     if (action === 'generateInvoicePDF')  return _generateInvoicePDF(body);
 
@@ -184,6 +187,7 @@ function _getMasterData() {
       price:          rawPrice !== '' ? Number(rawPrice) : '',
       inspection:     _fmtDate(_toDate(r[ci(COL.INSPECTION)])),
       oil:            _fmtDate(_toDate(r[ci(COL.OIL)])),
+      modelYear:      r[ci(COL.MODEL_YEAR)]        || '',
       driveType:      r[ci(COL.DRIVE_TYPE)]       || '',
       remoteKey:      r[ci(COL.REMOTE_KEY)]       || '',
       smokeGlass:     r[ci(COL.SMOKE_GLASS)]      || '',
@@ -227,22 +231,22 @@ function _registerVehicle(body) {
     var internalFolder = vehicleFolder.createFolder('社内');
     publicFolderId = publicFolder.getId();
     internalFolderId = internalFolder.getId();
-    // 登録時の画像は公開フォルダに保存
+    // 登録時の画像は公開フォルダに保存（配列順を 001_ 連番で固定）
     if (body.images && body.images.length > 0) {
       body.images.forEach(function(img, idx) {
         try {
           var b64 = img.base64.replace(/^data:image\/\w+;base64,/, '');
-          var blob = Utilities.newBlob(Utilities.base64Decode(b64), 'image/jpeg', img.name || 'img_' + (idx+1) + '.jpg');
+          var blob = Utilities.newBlob(Utilities.base64Decode(b64), 'image/jpeg', _pad(idx+1) + '_' + (img.name || 'img_' + (idx+1) + '.jpg'));
           publicFolder.createFile(blob);
         } catch(e) {}
       });
     }
-    // 社内画像
+    // 社内画像（配列順を 001_ 連番で固定）
     if (body.imagesInternal && body.imagesInternal.length > 0) {
       body.imagesInternal.forEach(function(img, idx) {
         try {
           var b64 = img.base64.replace(/^data:image\/\w+;base64,/, '');
-          var blob = Utilities.newBlob(Utilities.base64Decode(b64), 'image/jpeg', img.name || 'internal_' + (idx+1) + '.jpg');
+          var blob = Utilities.newBlob(Utilities.base64Decode(b64), 'image/jpeg', _pad(idx+1) + '_' + (img.name || 'internal_' + (idx+1) + '.jpg'));
           internalFolder.createFile(blob);
         } catch(e) {}
       });
@@ -265,6 +269,7 @@ function _registerVehicle(body) {
   newRow[ci(COL.REMOTE_KEY)]      = body.remoteKey || '';
   newRow[ci(COL.SMOKE_GLASS)]     = body.smokeGlass || '';
   newRow[ci(COL.MILEAGE_INITIAL)] = body.mileageInitial ? Number(body.mileageInitial) : '';
+  newRow[ci(COL.MODEL_YEAR)]      = body.modelYear || '';
   newRow[ci(COL.NOTE)]            = body.note || '';
   newRow[ci(COL.IMAGE_PUBLIC)]    = publicFolderId;
   newRow[ci(COL.IMAGE_INTERNAL)]  = internalFolderId;
@@ -776,11 +781,13 @@ function _uploadImage(body) {
   }
 
   var folder = DriveApp.getFolderById(folderId);
+  // 既存の最大連番の続きから採番（末尾に追加）
+  var startIdx = _maxImageIndex(folder);
   var uploaded = [];
   images.forEach(function(img, idx) {
     try {
       var b64 = img.base64.replace(/^data:image\/\w+;base64,/, '');
-      var blob = Utilities.newBlob(Utilities.base64Decode(b64), 'image/jpeg', img.name || 'img_' + Date.now() + '_' + idx + '.jpg');
+      var blob = Utilities.newBlob(Utilities.base64Decode(b64), 'image/jpeg', _pad(startIdx + idx + 1) + '_' + (img.name || 'img_' + idx + '.jpg'));
       var file = folder.createFile(blob);
       uploaded.push({ fileId: file.getId(), url: 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w800', name: file.getName() });
     } catch(e) {}
@@ -804,6 +811,44 @@ function _deleteImage(body) {
   } catch(e) {
     return _json({ error: 'ファイル削除エラー: ' + e.message });
   }
+}
+
+
+// =====================================================
+//  画像：並べ替え（連番プレフィックスで順序を永続化）
+// =====================================================
+function _reorderImages(body) {
+  var ids = body.fileIds || [];
+  if (!ids.length) return _json({ error: '順序データがありません' });
+  var renamed = 0;
+  ids.forEach(function(fid, i) {
+    try {
+      var file = DriveApp.getFileById(fid);
+      var name = file.getName();
+      var base = name.replace(/^\d{3,}_/, '');       // 既存プレフィックスを除去
+      var target = _pad(i + 1) + '_' + base;
+      if (name !== target) { file.setName(target); renamed++; }
+    } catch(e) {}
+  });
+  return _json({ success: true, renamed: renamed });
+}
+
+// フォルダ内の画像ファイルの最大連番を返す（プレフィックス無しは0扱い）
+function _maxImageIndex(folder) {
+  var files = folder.getFiles();
+  var max = 0;
+  while (files.hasNext()) {
+    var m = files.next().getName().match(/^(\d{3,})_/);
+    if (m) { var v = parseInt(m[1], 10); if (v > max) max = v; }
+  }
+  return max;
+}
+
+// 連番を3桁ゼロ埋め
+function _pad(n) {
+  n = String(n);
+  while (n.length < 3) n = '0' + n;
+  return n;
 }
 
 
@@ -1130,9 +1175,10 @@ function _getImagesFromFolder(folderId) {
           name: f.getName(),
         });
       }
-      if (imgs.length >= 30) break;
     }
-    return imgs;
+    // ファイル名の連番プレフィックス（001_ 等）で並び順を復元
+    imgs.sort(function(a, b) { return a.name < b.name ? -1 : (a.name > b.name ? 1 : 0); });
+    return imgs.slice(0, 30);
   } catch (e) {
     return [];
   }
